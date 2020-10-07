@@ -1,17 +1,9 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-
 from dataAggregator.dataAggregator import DataAggregator
-import time
-import telepot
-from datetime import datetime
-import csv
-import matplotlib.pyplot as plt
-import os
 import configHandler
 import telegramBot
-from multiprocessing import Process
 from datetime import datetime
 import threading
 import time
