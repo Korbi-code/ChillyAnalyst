@@ -13,26 +13,14 @@ detection_state = 'IDLE'
 state_machine_parameter = 0
 debounce_timer = 0
 sleep_time = 25
-TelegramHandler_object = False
+TelegramHandler_object = 0
 
-
-def init_telegram():
+def fetch_telegrambot():
     global TelegramHandler_object
     read_successful, telegram_cfg = configHandler.get_configuration("telegram")
     if read_successful:
         # Create telegram handler object
-        TelegramHandler_object = telegramBot.TelegramHandler(telegram_cfg['token'],
-                                                             telegram_cfg['password'],
-                                                             telegram_cfg['subscribed_users_path'])
-        return True
-    else:
-        print("Invalid configuration")
-        return False
-
-
-def fetch_telegram():
-    global TelegramHandler_object
-    if TelegramHandler_object:
+        TelegramHandler_object = telegramBot.TelegramHandler(telegram_cfg['token'])
         while 1:
             TelegramHandler_object.start_listening()
             time.sleep(10)
@@ -40,10 +28,10 @@ def fetch_telegram():
             current_time = now.strftime("%H:%M:%S")
             print("Process Telegram Current Time =", current_time)
     else:
-        print('Telegram bot is Invalid - This is critical')
+        print("Invalid configuration")
 
 
-def init_data_aggregator():
+def init():
     global data_aggregator
     read_successful, data_aggregator_cfg = configHandler.get_configuration("data_aggregator")
 
@@ -71,6 +59,7 @@ def state_machine():
     while 1:
         # Get new value
         read_power_mw = data_aggregator.get_dev_value()
+        print(read_power_mw,detection_state)
 
         # State Machine
         if detection_state == 'IDLE':
@@ -79,7 +68,7 @@ def state_machine():
                 start_time = datetime.now().strftime("%H:%M:%S")
                 detection_state = 'MEASURE'
                 TelegramHandler_object.send_message("Start Detected")
-                # value_container.append(read_power_mw)
+                #value_container.append(read_power_mw)
 
         elif detection_state == 'MEASURE':
             sleep_time = int(state_machine_parameter['param_measure_tick_rate'])
@@ -90,7 +79,7 @@ def state_machine():
                     detection_state = 'END'
             else:
                 debounce_timer = 0
-            # value_container.append(read_power_mw)
+            #value_container.append(read_power_mw)
 
         elif detection_state == 'END':
             '''
@@ -112,16 +101,19 @@ def state_machine():
 
 
 def main():
+    global data_aggregator
+    global detection_state
     global state_machine_parameter
-    read_successful, state_machine_parameter = configHandler.get_configuration("parameter")
+    read_successful,state_machine_parameter = configHandler.get_configuration("parameter")
+
+
 
 if __name__ == '__main__':
     print("Start Main-Programm")
-    init_data_aggregator()
-    init_telegram()
+    init()
     main()
 
-    thread1 = threading.Thread(target=fetch_telegram)
+    thread1 = threading.Thread(target=fetch_telegrambot)
     thread1.start()
 
     thread2 = threading.Thread(target=state_machine)
