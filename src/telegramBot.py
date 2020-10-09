@@ -1,11 +1,14 @@
 import telepot
+import os
+import csv
 
 
 class TelegramHandler:
-    def __init__(self, token):
+    def __init__(self, token, password, subscribed_users):
         self.token = token
         self.bot = telepot.Bot(self.token)
-        self.subscribed_users = []
+        self.subscribed_users = subscribed_users
+        self.password = password
 
     def start_listening(self):
         messages = self.bot.getUpdates()
@@ -18,14 +21,29 @@ class TelegramHandler:
     def handle_new_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         if content_type == "text":
-            text_message = (msg["text"])
-            if 'Password' in (msg["text"]):
-                self.subscribed_users.append(chat_id)
+            if str(self.password) in (msg["text"]):
+                if os.path.exists(self.subscribed_users):
+                    append_write = 'a'  # append if already exists
+                else:
+                    append_write = 'w'  # make a new file if not
+
+                with open(self.subscribed_users, append_write, newline='') as csvfile:
+                    writer = csv.writer(csvfile, delimiter=' ',
+                                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow([chat_id])
+
+                self.bot.sendMessage(chat_id, 'Your are now subscribed, Nice!')
 
     def send_message(self, txt):
-        for chat_id in self.subscribed_users:
-            self.bot.sendMessage(chat_id, txt)
+        if os.path.exists(self.subscribed_users):
+            with open(self.subscribed_users, newline='') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                for row in reader:
+                    self.bot.sendMessage(row[0], txt)
 
     def send_png(self, chat_id, png_path):
-        for chat_id in self.subscribed_users:
-            self.bot.sendPhoto(chat_id, photo=open(png_path, 'rb'))
+        if os.path.exists(self.subscribed_users):
+            with open(self.subscribed_users, newline='') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                for row in reader:
+                    self.bot.sendPhoto(row[0], photo=open(png_path, 'rb'))
