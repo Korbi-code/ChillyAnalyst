@@ -22,17 +22,29 @@ class TelegramHandler:
         content_type, chat_type, chat_id = telepot.glance(msg)
         if content_type == "text":
             if str(self.password) in (msg["text"]):
-                if os.path.exists(self.subscribed_users):
-                    append_write = 'a'  # append if already exists
+                if self.handle_subscription_request(chat_id):
+                    self.bot.sendMessage(chat_id, 'Your are now subscribed, Nice!')
                 else:
-                    append_write = 'w'  # make a new file if not
+                    self.bot.sendMessage(chat_id, 'You are already subscribed!')
 
-                with open(self.subscribed_users, append_write, newline='') as csvfile:
-                    writer = csv.writer(csvfile, delimiter=' ',
-                                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow([chat_id])
+    def handle_subscription_request(self, chat_id):
+        if os.path.exists(self.subscribed_users):
+            append_write = 'a'  # append if already exists
 
-                self.bot.sendMessage(chat_id, 'Your are now subscribed, Nice!')
+            # if file exists check if user is already on the list
+            with open(self.subscribed_users, newline='') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                for row in reader:
+                    if int(chat_id) == int(row[0]):
+                        return False
+        else:
+            append_write = 'w'  # make a new file if not
+
+        with open(self.subscribed_users, append_write, newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=' ',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([chat_id])
+            return True
 
     def send_message(self, txt):
         if os.path.exists(self.subscribed_users):
