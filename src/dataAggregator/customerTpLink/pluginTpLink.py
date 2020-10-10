@@ -4,12 +4,11 @@
 # imports
 import asyncio
 import logging
-
-_LOGGER = logging.getLogger(__name__)
-
 # import kasa Lib dependencies
 from kasa import Discover
 from kasa import SmartDevice
+
+_LOGGER = logging.getLogger(__name__)
 
 detected_device = False
 detected_device_ip = False
@@ -23,7 +22,7 @@ def init_dev_by_alias(search_alias):
     '''
     Search based on the configured alias the device in network.
     Create link between search_alias and plug IP address to access the values
-    :return: IP adress to plug
+    :return: IP address to plug
     '''
     ip_to_return = False
     logging.basicConfig(level=logging.INFO)
@@ -41,7 +40,7 @@ def init_dev_by_alias(search_alias):
 
     '''
     create the object_device based on the detected ip
-    object provides the acces to the plug
+    object provides the access to the plug
     '''
     detected_device = SmartDevice(detected_device_ip)
     asyncio.run(detected_device.update())
@@ -51,7 +50,7 @@ def init_dev_by_alias(search_alias):
 
 def get_dev_value():
     '''
-    :return: returns the acutal emeter value
+    :return: returns the actual emeter value
     '''
     # Globals
     global detected_device
@@ -77,6 +76,6 @@ def get_device_valid():
 
 def get_device_ip():
     '''
-    :return: the device IP adress
+    :return: the device IP address
     '''
     return detected_device_ip

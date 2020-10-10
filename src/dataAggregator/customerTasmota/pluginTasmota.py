@@ -2,10 +2,14 @@
 # -*- coding:utf-8 -*-
 
 # imports
+import logging
 
+
+_LOGGER = logging.getLogger(__name__)
 detected_device = False
 detected_device_ip = False
 detected_device_is_valid = False
+
 
 def init_dev_by_alias(search_alias):
     '''
@@ -13,24 +17,57 @@ def init_dev_by_alias(search_alias):
     :param search_alias:
     :return:
     '''
+    global detected_device
+    global detected_device_ip
+    global detected_device_is_valid
+    '''
+    Search based on the configured alias the device in network.
+    Create link between search_alias and plug IP address to access the values
+    :return: IP address to plug
+    '''
+    ip_to_return = False
+    logging.basicConfig(level=logging.INFO)
+    loop = asyncio.get_event_loop()
+
+    async def _on_device(dev):
+        await dev.update()
+        _LOGGER.info("Got device: %s", dev)
+
+    #devices = loop.run_until_complete(Discover.discover(on_discovered=_on_device))
+    devices = loop.run_until_complete(scanner.discover(on_discovered=_on_device)) #TODO write scanner function
+    for ip, dev in devices.items():     #what happens if more than on device is found (looks like just the first ip gets picked)
+        if dev.alias == search_alias:
+            ip_to_return = ip
+    detected_device_ip = ip_to_return
+
+    #TODO:
+    '''
+    create the object_device based on the detected ip
+    object provides the access to the plug
+    '''
+    detected_device = SmartDevice(detected_device_ip)
+    asyncio.run(detected_device.update())
+    if detected_device.has_emeter:
+        detected_device_is_valid = True
+
 
 def get_dev_value():
-    '''
-    :return: returns the acutal emeter value
-    '''
+    """
+    :return: returns the actual emeter value
+    """
     return value
 
 
 def get_device_valid():
-    '''
+    """
     false device is not usable
     True device is ready to read the emeter values
-    '''
+    """
     return detected_device_is_valid
 
 
 def get_device_ip():
-    '''
-    :return: the device IP adress
-    '''
+    """
+    :return: the device IP address
+    """
     return detected_device_ip
