@@ -7,6 +7,7 @@ detected_device = False
 detected_device_ip = False
 detected_device_is_valid = False
 
+
 def init_dev_by_alias(search_alias):
     '''
     Init Device by alias
@@ -14,9 +15,10 @@ def init_dev_by_alias(search_alias):
     :return:
     '''
 
+
 def get_dev_value():
     '''
-    :return: returns the acutal emeter value
+    :return: returns the actual emeter value
     '''
     return value
 
@@ -31,6 +33,6 @@ def get_device_valid():
 
 def get_device_ip():
     '''
-    :return: the device IP adress
+    :return: the device IP address
     '''
     return detected_device_ip

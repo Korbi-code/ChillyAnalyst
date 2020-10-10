@@ -115,6 +115,7 @@ def main():
     global state_machine_parameter
     read_successful, state_machine_parameter = configHandler.get_configuration("parameter")
 
+
 if __name__ == '__main__':
     print("Start Main-Programm")
     init_data_aggregator()
