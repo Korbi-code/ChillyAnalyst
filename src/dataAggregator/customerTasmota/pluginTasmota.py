@@ -39,6 +39,8 @@ def init_dev_by_alias(search_alias):
         if dev.alias == search_alias:
             ip_to_return = ip
     detected_device_ip = ip_to_return
+    #test test test
+
 
     #TODO:
     '''
