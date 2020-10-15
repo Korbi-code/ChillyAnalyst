@@ -1,18 +1,27 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+# import module
+import configparser
+
 # imports Tp-Link plugin
 try:
     from dataAggregator.customerTpLink import pluginTpLink
 except:
     print("Tp-Link plugin not available")
 
+# config handler
+DATAAGGREGATOR_CFG = configparser.ConfigParser()
+configFilePath = r'../config/config.cfg'
+DATAAGGREGATOR_CFG.read(configFilePath)
+
 
 class DataAggregator:
-    def __init__(self, search_alias, customer):
-        self.customer = customer
+    def __init__(self):
+        self.customer = DATAAGGREGATOR_CFG.get('data_aggregator', 'use_plugin')
+        self.search_alias = DATAAGGREGATOR_CFG.get('data_aggregator', 'device_name')
         if self.customer == 'TpLink':
-            pluginTpLink.init_dev_by_alias(search_alias)
+            pluginTpLink.init_dev_by_alias(self.search_alias)
         else:
             print("No valid customer plugin selected")
 
