@@ -1,36 +1,60 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from dataAggregator.dataAggregator import DataAggregator
-import configHandler
-import telegramBot
-from datetime import datetime
+# Import Modules
 import threading
 import time
+from datetime import datetime
+import configparser
+from pathlib import Path
 
-data_aggregator = 0
-detection_state = 'IDLE'
-state_machine_parameter = 0
-debounce_timer = 0
-sleep_time = 25
+# Import Class
+from dataAggregator.dataAggregator import DataAggregator
+from telegramBot import TelegramHandler
+from dataContainer import DataContainer
+
+# Define Globals objects
+DataAggregator_object = 0
 TelegramHandler_object = False
+DataContainer_object = 0
+
+# State machine params
+PARAMS = configparser.ConfigParser()
+configFilePath = r'../config/config.cfg'
+PARAMS.read(configFilePath)
+PARAM_POWER_LOWER_LEVEL = int(PARAMS.get('parameter', 'PARAM_POWER_LOWER_LEVEL'))
+PARAM_POWER_DEBOUNCE_LEVEL = int(PARAMS.get('parameter', 'PARAM_POWER_DEBOUNCE_LEVEL'))
+PARAM_EMETER_PLUG_RESOLUTION = float(PARAMS.get('parameter', 'PARAM_EMETER_PLUG_RESOLUTION'))
+PARAM_IDLE_TICK_RATE = int(PARAMS.get('parameter', 'PARAM_IDLE_TICK_RATE'))
+PARAM_MEASURE_TICK_RATE = int(PARAMS.get('parameter', 'PARAM_MEASURE_TICK_RATE'))
+PARAM_DEBOUNCE_TICK_LIMIT = int(PARAMS.get('parameter', 'PARAM_DEBOUNCE_TICK_LIMIT'))
+
+
+def init():
+    # Create data path if not existing
+    Path(r'../data/').mkdir(parents=True, exist_ok=True)
+
+    init_data_aggregator()
+    init_telegram()
+    init_data_container()
 
 
 def init_telegram():
     global TelegramHandler_object
-    read_successful, telegram_cfg = configHandler.get_configuration("telegram")
-    if read_successful:
-        # Create telegram handler object
-        TelegramHandler_object = telegramBot.TelegramHandler(telegram_cfg['token'],
-                                                             telegram_cfg['password'],
-                                                             telegram_cfg['subscribed_users_path'])
-        return True
-    else:
-        print("Invalid configuration")
-        return False
+    TelegramHandler_object = TelegramHandler()
 
 
-def fetch_telegram():
+def init_data_aggregator():
+    global DataAggregator_object
+    DataAggregator_object = DataAggregator()
+
+
+def init_data_container():
+    global DataContainer_object
+    DataContainer_object = DataContainer()
+
+
+def cyclic_telegram_handler():
     global TelegramHandler_object
     if TelegramHandler_object:
         while 1:
@@ -43,89 +67,52 @@ def fetch_telegram():
         print('Telegram bot is Invalid - This is critical')
 
 
-def init_data_aggregator():
-    global data_aggregator
-    read_successful, data_aggregator_cfg = configHandler.get_configuration("data_aggregator")
-
-    if read_successful:
-        search_alias = data_aggregator_cfg['device_name']
-        customer = data_aggregator_cfg['use_plugin']
-        data_aggregator = DataAggregator(search_alias, customer)
-        if data_aggregator.get_device_valid:
-            print("Device detected with IP:" + str(data_aggregator.get_device_ip()))
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
-def state_machine():
-    # Globals
-    global detection_state
-    global debounce_timer
-    global state_machine_parameter
-    global sleep_time
-    global TelegramHandler_object
-
+def cyclic_state_machine_handler():
     while 1:
         # Get new value
-        read_power_mw = data_aggregator.get_dev_value()
-
+        read_power_mw = DataAggregator_object.get_dev_value()
+        DataContainer_object.add_new_value(read_power_mw)
         # State Machine
-        if detection_state == 'IDLE':
-            if read_power_mw > int(state_machine_parameter['param_power_lower_level']):
-                sleep_time = int(state_machine_parameter['param_measure_tick_rate'])
-                start_time = datetime.now().strftime("%H:%M:%S")
-                detection_state = 'MEASURE'
+        if cyclic_state_machine_handler.detection_state == 'IDLE':
+            if read_power_mw > PARAM_POWER_LOWER_LEVEL:
+                cyclic_state_machine_handler.sleep_time = PARAM_MEASURE_TICK_RATE
+                DataContainer_object.enable_acquisition()
+                cyclic_state_machine_handler.detection_state = 'MEASURE'
                 TelegramHandler_object.send_message("Start Detected")
-                # value_container.append(read_power_mw)
 
-        elif detection_state == 'MEASURE':
-            sleep_time = int(state_machine_parameter['param_measure_tick_rate'])
-            if read_power_mw <= int(state_machine_parameter['param_power_debounce_level']):
-                if debounce_timer < int(state_machine_parameter['param_debounce_tick_limit']):
-                    debounce_timer = debounce_timer + 1
+        elif cyclic_state_machine_handler.detection_state == 'MEASURE':
+            if read_power_mw <= PARAM_POWER_DEBOUNCE_LEVEL:
+                if cyclic_state_machine_handler.debounce_timer < PARAM_DEBOUNCE_TICK_LIMIT:
+                    cyclic_state_machine_handler.debounce_timer += 1
                 else:
-                    detection_state = 'END'
+                    DataContainer_object.disable_acquisition()
+                    cyclic_state_machine_handler.detection_state = 'END'
             else:
-                debounce_timer = 0
-            # value_container.append(read_power_mw)
+                cyclic_state_machine_handler.debounce_timer = 0
 
-        elif detection_state == 'END':
-            '''
-            value_container.append(read_power_mw)
-            plt.plot(value_container)
-            plt.ylabel('power [mw]')
-            plt.xlabel('ticks [500ms]')
-            plt.savefig(PGN_NAME)
-            value_container.clear()
-            '''
-            sleep_time = int(state_machine_parameter['param_idle_tick_rate'])
-            detection_state = 'IDLE'
+        elif cyclic_state_machine_handler.detection_state == 'END':
+            cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
+            if DataContainer_object.create_graph(PARAM_EMETER_PLUG_RESOLUTION):
+                TelegramHandler_object.send_png(DataContainer_object.get_png())
+            cyclic_state_machine_handler.detection_state = 'IDLE'
             TelegramHandler_object.send_message("End Detected")
         else:
             # not expected to reach this state, if so .... not good
             print('invalid state')
 
-        time.sleep(sleep_time)
+        time.sleep(cyclic_state_machine_handler.sleep_time)
 
 
-def main():
-    global state_machine_parameter
-    read_successful, state_machine_parameter = configHandler.get_configuration("parameter")
+# initialize statics for state_machine
+cyclic_state_machine_handler.detection_state = 'IDLE'
+cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
 
 
 if __name__ == '__main__':
-    print("Start Main-Programm")
-    init_data_aggregator()
-    init_telegram()
-    main()
+    init()
 
-    thread1 = threading.Thread(target=fetch_telegram)
+    thread1 = threading.Thread(target=cyclic_telegram_handler)
     thread1.start()
 
-    thread2 = threading.Thread(target=state_machine)
+    thread2 = threading.Thread(target=cyclic_state_machine_handler)
     thread2.start()
-
-    print("Ende Main-Programm")
