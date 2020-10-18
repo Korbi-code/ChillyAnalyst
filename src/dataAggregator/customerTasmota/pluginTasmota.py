@@ -2,8 +2,11 @@
 # -*- coding:utf-8 -*-
 
 # imports
+import asyncio
 import logging
-
+from src.dataAggregator.customerTasmota.scanner import scanner
+from src.dataAggregator.customerTasmota.scanner import power
+from src.dataAggregator.customerTasmota.scanner import update
 
 _LOGGER = logging.getLogger(__name__)
 detected_device = False
@@ -25,44 +28,42 @@ def init_dev_by_alias(search_alias):
     Create link between search_alias and plug IP address to access the values
     :return: IP address to plug
     '''
-    ip_to_return = False
     logging.basicConfig(level=logging.INFO)
-    loop = asyncio.get_event_loop()
+    ip_to_return = scanner(search_alias)
+    if ip_to_return:
+        detected_device_ip = ip_to_return
+        detected_device_is_valid = True
 
-    async def _on_device(dev):
-        await dev.update()
-        _LOGGER.info("Got device: %s", dev)
-
-    #devices = loop.run_until_complete(Discover.discover(on_discovered=_on_device))
-    devices = loop.run_until_complete(scanner.discover(on_discovered=_on_device)) #TODO write scanner function
-    for ip, dev in devices.items():     #what happens if more than on device is found (looks like just the first ip gets picked)
-        if dev.alias == search_alias:
-            ip_to_return = ip
-    detected_device_ip = ip_to_return
-    # korbi was here
-
-    #TODO:
+    # TODO: is it necessary?
     '''
     create the object_device based on the detected ip
     object provides the access to the plug
     '''
-    detected_device = SmartDevice(detected_device_ip)
-    asyncio.run(detected_device.update())
-    if detected_device.has_emeter:
-        detected_device_is_valid = True
+    # detected_device = SmartDevice(detected_device_ip)
 
 
 def get_dev_value():
     """
-    :return: returns the actual emeter value
+    :return: returns the actual e-meter value
     """
+    # Globals
+    global detected_device
+    global detected_device_ip
+    global detected_device_is_valid
+
+    # Get and return value of plug
+    if detected_device_is_valid:
+        asyncio.run(update(detected_device_ip))
+        value = power
+    else:
+        value = 0
     return value
 
 
 def get_device_valid():
     """
     false device is not usable
-    True device is ready to read the emeter values
+    True device is ready to read the e-meter values
     """
     return detected_device_is_valid
 
