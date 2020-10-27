@@ -81,7 +81,7 @@ def scanner(search_alias):
 
 
 def update(deviceIP):
-    global power
+    local_power = 0
     status_url = 'http://' + str(deviceIP) + '/cm?cmnd=Status%208'
     # print(status_url)
     try:
@@ -89,17 +89,19 @@ def update(deviceIP):
         try:
             json_con = r.json()
             if str(json_con).find('ENERGY') != -1:
-                power = str(json_con["StatusSNS"]["ENERGY"]["Power"])
+                local_power = str(json_con["StatusSNS"]["ENERGY"]["Power"])
                 # print("Power: " + power)
         except ValueError:
             # print("no json")
-            power = 0
+            local_power = 0
             pass
     except (
             requests.ConnectTimeout, requests.HTTPError, requests.ReadTimeout, requests.Timeout,
             requests.ConnectionError):
         # print("no device")
-        power = 0  # TODO error message and stop calling
+        local_power = 0  # TODO error message and stop calling
         pass
+
+    return local_power
 
 

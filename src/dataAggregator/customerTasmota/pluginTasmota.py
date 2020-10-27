@@ -53,8 +53,7 @@ def get_dev_value():
 
     # Get and return value of plug
     if detected_device_is_valid:
-        asyncio.run(update(detected_device_ip))
-        value = power
+        value = int(update(detected_device_ip))
     else:
         value = 0
     return value
