@@ -8,9 +8,17 @@ import socket
 from queue import Queue
 from threading import Thread
 
+testIP = "8.8.8.8"
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect((testIP, 0))
+ipaddr = s.getsockname()[0]
+host = socket.gethostname()
+
 # globals
 valid_ips = []
 myIP = socket.gethostbyname(socket.gethostname())
+myIP = ipaddr
+print(ipaddr)
 ips = myIP.split('.')
 deviceName = False
 power = 0

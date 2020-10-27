@@ -70,7 +70,7 @@ def cyclic_telegram_handler():
 def cyclic_state_machine_handler():
     while 1:
         # Get new value
-        read_power_mw = DataAggregator_object.get_dev_value() / PARAM_EMETER_PLUG_RESOLUTION
+        read_power_mw = DataAggregator_object.get_dev_value() * PARAM_EMETER_PLUG_RESOLUTION
         DataContainer_object.add_new_value(read_power_mw)
         # State Machine
         if cyclic_state_machine_handler.detection_state == 'IDLE':
@@ -79,6 +79,7 @@ def cyclic_state_machine_handler():
                 DataContainer_object.enable_acquisition()
                 cyclic_state_machine_handler.detection_state = 'MEASURE'
                 TelegramHandler_object.send_message("Start Detected")
+                cyclic_state_machine_handler.debounce_timer = 0
 
         elif cyclic_state_machine_handler.detection_state == 'MEASURE':
             if read_power_mw <= PARAM_POWER_DEBOUNCE_LEVEL:
