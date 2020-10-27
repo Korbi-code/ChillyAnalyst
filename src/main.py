@@ -70,7 +70,7 @@ def cyclic_telegram_handler():
 def cyclic_state_machine_handler():
     while 1:
         # Get new value
-        read_power_mw = DataAggregator_object.get_dev_value()
+        read_power_mw = DataAggregator_object.get_dev_value() / PARAM_EMETER_PLUG_RESOLUTION
         DataContainer_object.add_new_value(read_power_mw)
         # State Machine
         if cyclic_state_machine_handler.detection_state == 'IDLE':
