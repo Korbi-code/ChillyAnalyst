@@ -4,6 +4,8 @@
 # import module
 import configparser
 
+import sys
+sys.path.append('../')
 # imports Tp-Link plugin
 try:
     from dataAggregator.customerTpLink import pluginTpLink
@@ -14,7 +16,7 @@ except:
 try:
     from dataAggregator.customerTasmota import pluginTasmota
 except:
-    print("Tp-Link plugin not available")
+    print("Tasmota plugin not available")
 
 # config handler
 DATAAGGREGATOR_CFG = configparser.ConfigParser()
