@@ -39,7 +39,7 @@ class TelegramHandler:
     def handle_new_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         if content_type == "text":
-            if str(self.password) in (msg["text"]):
+            if str(self.password) in (msg["text"]):     #TODO Bug answer "aleready subscribed" gets sent even if the msg does not contain password
                 if self.handle_subscription_request(chat_id):
                     self.bot.sendMessage(chat_id, 'Your are now subscribed, Nice!')
                 else:
