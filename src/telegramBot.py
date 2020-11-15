@@ -5,12 +5,16 @@
 import telepot
 import os
 import csv
-from pathlib import Path
 import configparser
+import sys
+from pathlib import Path
+
+# Define global REPO_PATH
+REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
 
 # config handler
 TELEGRAM_CFG = configparser.ConfigParser()
-configFilePath = r'../config/config.cfg'
+configFilePath = REPO_PATH+r'/config/config.cfg'
 TELEGRAM_CFG.read(configFilePath)
 
 
@@ -18,15 +22,17 @@ class TelegramHandler:
     def __init__(self):
         self.token = TELEGRAM_CFG.get('telegram', 'token')
         self.bot = telepot.Bot(self.token)
-        self.subscribed_users = str(TELEGRAM_CFG.get('telegram', 'subscribed_users_path')) + \
-                                str(TELEGRAM_CFG.get('telegram', 'subscribed_users_filename'))
+        self.subscribed_users_path = REPO_PATH+str(TELEGRAM_CFG.get('telegram', 'subscribed_users_path'))
+
+        self.subscribed_users_file = self.subscribed_users_path +\
+                                     str(TELEGRAM_CFG.get('telegram', 'subscribed_users_filename'))
         self.password = TELEGRAM_CFG.get('telegram', 'password')
 
-        Path(str(TELEGRAM_CFG.get('telegram', 'subscribed_users_path'))).mkdir(parents=True, exist_ok=True)
+        Path(self.subscribed_users_path).mkdir(parents=True, exist_ok=True)
         try:
-            open(str(self.subscribed_users), 'r')
+            open(str(self.subscribed_users_file), 'r')
         except FileNotFoundError:
-            open(str(self.subscribed_users), "w")
+            open(str(self.subscribed_users_file), "w")
 
     def start_listening(self):
         messages = self.bot.getUpdates()
@@ -46,11 +52,11 @@ class TelegramHandler:
                     self.bot.sendMessage(chat_id, 'You are already subscribed!')
 
     def handle_subscription_request(self, chat_id):
-        if os.path.exists(self.subscribed_users):
+        if os.path.exists(self.subscribed_users_file):
             append_write = 'a'  # append if already exists
 
             # if file exists check if user is already on the list
-            with open(self.subscribed_users, newline='') as csvfile:
+            with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
                     if int(chat_id) == int(row[0]):
@@ -58,22 +64,22 @@ class TelegramHandler:
         else:
             append_write = 'w'  # make a new file if not
 
-        with open(self.subscribed_users, append_write, newline='') as csvfile:
+        with open(self.subscribed_users_file, append_write, newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=' ',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow([chat_id])
             return True
 
     def send_message(self, txt):
-        if os.path.exists(self.subscribed_users):
-            with open(self.subscribed_users, newline='') as csvfile:
+        if os.path.exists(self.subscribed_users_file):
+            with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
                     self.bot.sendMessage(row[0], txt)
 
-    def send_png(self, png_path):
-        if os.path.exists(self.subscribed_users):
-            with open(self.subscribed_users, newline='') as csvfile:
+    def send_html(self, png_path):
+        if os.path.exists(self.subscribed_users_file):
+            with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
-                    self.bot.sendPhoto(row[0], photo=open(png_path, 'rb'))
+                    self.bot.sendDocument(row[0], document=open(png_path, 'rb'))

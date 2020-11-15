@@ -3,16 +3,23 @@
 
 # import module
 import configparser
+import os
+import sys
+from pathlib import Path
 
 # imports Tp-Link plugin
 try:
-    from dataAggregator.customerTpLink import pluginTpLink
+    from src.dataAggregator.customerTpLink import pluginTpLink
 except:
     print("Tp-Link plugin not available")
 
+
+# Define global REPO_PATH
+REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
+
 # config handler
 DATAAGGREGATOR_CFG = configparser.ConfigParser()
-configFilePath = r'../config/config.cfg'
+configFilePath = REPO_PATH+r'/config/config.cfg'
 DATAAGGREGATOR_CFG.read(configFilePath)
 
 
