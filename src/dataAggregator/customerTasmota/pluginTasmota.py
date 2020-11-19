@@ -25,10 +25,10 @@ host = socket.gethostname()
 valid_ips = []
 myIP = socket.gethostbyname(socket.gethostname())
 myIP = ipaddr
-print(ipaddr)
 ips = myIP.split('.')
 deviceName = False
 power = 0
+
 
 def init_dev_by_alias(search_alias):
     '''
@@ -50,13 +50,6 @@ def init_dev_by_alias(search_alias):
         detected_device_ip = ip_to_return
         detected_device_is_valid = True
 
-    # TODO: is it necessary?
-    '''
-    create the object_device based on the detected ip
-    object provides the access to the plug
-    '''
-    # detected_device = SmartDevice(detected_device_ip)
-
 
 def get_dev_value():
     """
@@ -69,7 +62,7 @@ def get_dev_value():
 
     # Get and return value of plug
     if detected_device_is_valid:
-        value = int(update(detected_device_ip))
+        value = int(read_value_from_device_ip(detected_device_ip))
     else:
         value = 0
     return value
@@ -89,7 +82,8 @@ def get_device_ip():
     """
     return detected_device_ip
 
-def do_stuff(q):
+
+def find_device_by_ip(q):
     global power
     while True:
         if q.empty():
@@ -97,16 +91,18 @@ def do_stuff(q):
             break
         check_ip = q.get()  # Take element out of q
         ''' http://192.168.0.136/cm?cmnd=DeviceName finds the name set in Tasmota'''
-        status_url = 'http://' + ('%s.%s.%s.%s' % (str(ips[0]), str(ips[1]), str(ips[2]), str(check_ip))) + '/cm?cmnd=Status%208'
+        status_url = 'http://' + (
+                    '%s.%s.%s.%s' % (str(ips[0]), str(ips[1]), str(ips[2]), str(check_ip))) + '/cm?cmnd=Status%208'
         # print(status_url)
         try:
             r = requests.get(url=status_url, timeout=0.3)
             try:
                 json_con = r.json()
-                print(json_con)
-                if str(json_con).find('ENERGY') != -1:  # todo find better filter methode for Tasmota devices (first check devive name and the for energy)
+                # print(json_con)
+                if str(json_con).find(
+                        'ENERGY') != -1:  # todo find better filter methode for Tasmota devices (first check devive name and the for energy)
                     power = str(json_con["StatusSNS"]["ENERGY"]["Power"])
-                    print("Power: " + power)
+                    # print("Power: " + power)
                     valid_ips.append(check_ip)
             except ValueError:
                 # print("no json")
@@ -137,7 +133,7 @@ def scanner(search_alias):
     '''
     num_threads = 25
     for i in range(num_threads):
-        worker = Thread(target=do_stuff, args=(q,))
+        worker = Thread(target=find_device_by_ip, args=(q,))
         worker.setDaemon(True)
         worker.start()
 
@@ -153,9 +149,9 @@ def scanner(search_alias):
         return False
 
 
-def update(deviceIP):
+def read_value_from_device_ip(device_ip):
     local_power = 0
-    status_url = 'http://' + str(deviceIP) + '/cm?cmnd=Status%208'
+    status_url = 'http://' + str(device_ip) + '/cm?cmnd=Status%208'
     # print(status_url)
     try:
         r = requests.get(url=status_url, timeout=0.3)
