@@ -29,7 +29,7 @@ def init_dev_by_alias(search_alias):
     loop = asyncio.get_event_loop()
 
     async def _on_device(dev):
-        await dev.update()
+        await dev.read_value_from_device_ip()
         _LOGGER.info("Got device: %s", dev)
 
     devices = loop.run_until_complete(Discover.discover(on_discovered=_on_device))
