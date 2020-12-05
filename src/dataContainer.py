@@ -4,14 +4,22 @@
 # import module
 import os
 import collections
+import plotly
 import plotly.graph_objects as go
-from pathlib import Path
 import configparser
+import sys
+from pathlib import Path
+import os
+import shutil
+
+# Define global REPO_PATH
+REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
 
 # config handler
 DATACONTAINER_CFG = configparser.ConfigParser()
-configFilePath = r'../config/config.cfg'
+configFilePath = REPO_PATH + r'/config/config.cfg'
 DATACONTAINER_CFG.read(configFilePath)
+
 
 class DataContainer:
     def __init__(self):
@@ -21,8 +29,8 @@ class DataContainer:
         for i in range(self.buffer_length):
             self.value_buffer.append(0)
         self.data_container = []
-        self.data_path = DATACONTAINER_CFG.get('data_container', 'measurement_data_path')
-        self.file_name = DATACONTAINER_CFG.get('data_container', 'file_name')
+        self.data_path = REPO_PATH + DATACONTAINER_CFG.get('data_container', 'measurement_data_path')
+        self.file_name = DATACONTAINER_CFG.get('data_container', 'file_name') + '.html'
         self.path_to_file = str(self.data_path) + str(self.file_name)
         Path(self.data_path).mkdir(parents=True, exist_ok=True)
 
@@ -45,34 +53,34 @@ class DataContainer:
 
         y = [element * value_resolution for element in self.data_container]
         x = list(range(len(y)))
-        fig = go.Figure()
 
-        try:
-            fig.add_trace(go.Scatter(
-                x=x,
-                y=y,
-                name='<b>No</b> Gaps',
-                connectgaps=True,
-            ))
-            fig.update_layout(title='Washi Washi Run',
-                                yaxis = dict(
+        if not os.path.exists(self.data_path):
+            os.mkdir(self.data_path)
+        else:
+            for filename in os.listdir(self.data_path):
+                file_path = os.path.join(self.data_path, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+        plotly.offline.plot({
+            "data": [go.Scatter(x=x, y=y)],
+            "layout": go.Layout(title='Washi Washi Run',
+                                yaxis=dict(
                                     title="Power [W]"
                                 ),
-                                xaxis = dict(
+                                xaxis=dict(
                                     title="Ticks"
                                 ))
-            fig.show()
+        }, auto_open=True, image='png', filename=self.path_to_file)
 
-            if os.path.exists(self.data_path):
-                try:
-                    fig.write_image(self.path_to_file)
-                    return True
-                except:
-                    return False
-        except:
-            return False
+        return True
 
-    def get_png(self):
+    def get_html(self):
         if os.path.isfile(self.path_to_file):
             return self.path_to_file
         else:

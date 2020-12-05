@@ -3,24 +3,29 @@
 
 # import module
 import configparser
-
+import os
 import sys
-sys.path.append('../')
+from pathlib import Path
++sys.path.append('../')
 # imports Tp-Link plugin
 try:
-    from dataAggregator.customerTpLink import pluginTpLink
+    from src.dataAggregator.customerTpLink import pluginTpLink
 except:
     print("Tp-Link plugin not available")
 
 # imports Tasmota plugin
 try:
-    from dataAggregator.customerTasmota import pluginTasmota
+    from src.dataAggregator.customerTasmota import pluginTasmota
 except:
     print("Tasmota plugin not available")
 
+
+# Define global REPO_PATH
+REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
+
 # config handler
 DATAAGGREGATOR_CFG = configparser.ConfigParser()
-configFilePath = r'../config/config.cfg'
+configFilePath = REPO_PATH+r'/config/config.cfg'
 DATAAGGREGATOR_CFG.read(configFilePath)
 
 
