@@ -6,7 +6,7 @@ import configparser
 import os
 import sys
 from pathlib import Path
-+sys.path.append('../')
+#sys.path.append('../')
 # imports Tp-Link plugin
 try:
     from src.dataAggregator.customerTpLink import pluginTpLink
