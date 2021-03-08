@@ -44,7 +44,7 @@ git checkout origin/feature/tasmota-plugin-v02
 
 6. Install python dependencies
 ```bash
-cd OrangeMonkey
+cd ChillyAnalyst
 sudo pip3 install -r requirements.txt
 ```     
 

@@ -73,6 +73,9 @@ class TelegramHandler:
         if message == 'Status':
             update.message.reply_text('Still running!')
 
+        if message == str(TELEGRAM_CFG.get('telegram', 'Password')):
+            self.handle_subscription_request(id)
+
     def handle_subscription_request(self, chat_id):
         if os.path.exists(self.subscribed_users_file):
             append_write = 'a'  # append if already exists
