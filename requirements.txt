@@ -1,5 +1,4 @@
 requests==2.24.0
-telepot==12.7
 plotly==4.12.0
 python-kasa==0.4.0.dev1
 tinydb==4.3.0
