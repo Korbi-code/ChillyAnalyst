@@ -1,0 +1,12 @@
+[Unit]
+Description=ChillyAnalyst_Bot
+After=network.target
+
+[Service]
+ExecStartPre=/bin/sleep 30
+ExecStart=/bin/bash -c '/usr/bin/python3 Src/main.py > /home/pi/ChillyAnalyst.log 2>&1'
+WorkingDirectory=/home/pi/ChillyAnalyst
+
+[Install]
+WantedBy=multi-user.target
+
