@@ -9,22 +9,27 @@ import configparser
 import sys
 from pathlib import Path
 
+from telegram import Update
+import telegram
+from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext)
+
+
 # Define global REPO_PATH
 REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
 
 # config handler
 TELEGRAM_CFG = configparser.ConfigParser()
-configFilePath = REPO_PATH+r'/config/config.cfg'
+configFilePath = REPO_PATH + r'/config/config.cfg'
 TELEGRAM_CFG.read(configFilePath)
 
 
 class TelegramHandler:
-    def __init__(self):
-        self.token = TELEGRAM_CFG.get('telegram', 'token')
-        self.bot = telepot.Bot(self.token)
-        self.subscribed_users_path = REPO_PATH+str(TELEGRAM_CFG.get('telegram', 'subscribed_users_path'))
+    def __init__(self,token):
+        self.token = token
 
-        self.subscribed_users_file = self.subscribed_users_path +\
+        self.subscribed_users_path = REPO_PATH + str(TELEGRAM_CFG.get('telegram', 'subscribed_users_path'))
+
+        self.subscribed_users_file = self.subscribed_users_path + \
                                      str(TELEGRAM_CFG.get('telegram', 'subscribed_users_filename'))
         self.password = TELEGRAM_CFG.get('telegram', 'password')
 
@@ -34,22 +39,39 @@ class TelegramHandler:
         except FileNotFoundError:
             open(str(self.subscribed_users_file), "w")
 
-    def start_listening(self):
-        messages = self.bot.getUpdates()
-        if len(messages) > 0:
-            next_message_id = messages[-1]['update_id'] + 1
-            for msg in messages:
-                self.handle_new_message(msg['message'])
-            self.bot.getUpdates(next_message_id)  # Tell telegram the next id we would like to receive
+    def start(self):
+        # Create the Updater and pass it your bot's token.
+        # Make sure to set use_context=True to use the new context based callbacks
+        # Post version 12 this will no longer be necessary
+        updater = Updater(self.token, use_context=True)
 
-    def handle_new_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        if content_type == "text":
-            if str(self.password) in (msg["text"]):     #TODO Bug answer "aleready subscribed" gets sent even if the msg does not contain password
-                if self.handle_subscription_request(chat_id):
-                    self.bot.sendMessage(chat_id, 'Your are now subscribed, Nice!')
-                else:
-                    self.bot.sendMessage(chat_id, 'You are already subscribed!')
+        # Get the dispatcher to register handlers
+        dispatcher = updater.dispatcher
+
+        dispatcher.add_handler(
+            MessageHandler(Filters.text & ~Filters.command, self.handle_new_text_message, run_async=True))
+
+        # Start the Bot
+        updater.start_polling()
+
+
+    def handle_new_text_message(self, update: Update, context: CallbackContext) -> int:
+        # Get user properties
+        user = update.message.from_user
+        message = update.message.text
+        id = user["id"]
+        firstname = user["first_name"]
+        try:
+            lastname = user["last_name"]
+        except KeyError:
+            lastname = "None"
+
+        # Register new user
+        update.message.reply_text('Hallo ' + firstname + '!\n')
+
+        # Get alive message from bot
+        if message == 'Status':
+            update.message.reply_text('Still running!')
 
     def handle_subscription_request(self, chat_id):
         if os.path.exists(self.subscribed_users_file):
@@ -72,14 +94,18 @@ class TelegramHandler:
 
     def send_message(self, txt):
         if os.path.exists(self.subscribed_users_file):
+            bot = telegram.Bot(self.token)
             with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
-                    self.bot.sendMessage(row[0], txt)
+                    bot.send_message(row[0], txt)
+                    print("Send Messag",txt)
 
     def send_html(self, png_path):
         if os.path.exists(self.subscribed_users_file):
+            bot = telegram.Bot(self.token)
             with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
-                    self.bot.sendDocument(row[0], document=open(png_path, 'rb'))
+                    bot.send_document(row[0], document=open(png_path, 'rb'))
+                    print("Send HTML",png_path)
