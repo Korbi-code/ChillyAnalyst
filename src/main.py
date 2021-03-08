@@ -3,7 +3,6 @@
 # Import Modules
 import threading
 import time
-from datetime import datetime
 import configparser
 from pathlib import Path
 import sys
@@ -14,6 +13,7 @@ sys.path.append(os.getcwd())
 from src.dataAggregator.dataAggregator import DataAggregator
 from src.telegramBot import TelegramHandler
 from src.dataContainer import DataContainer
+from src.cfgReader import get_configuration
 
 # Define global REPO_PATH
 REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
@@ -25,7 +25,7 @@ DataContainer_object = 0
 
 # State machine params
 PARAMS = configparser.ConfigParser()
-configFilePath = REPO_PATH+r'/config/config.cfg'
+configFilePath = REPO_PATH + r'/config/config.cfg'
 PARAMS.read(configFilePath)
 PARAM_POWER_LOWER_LEVEL = int(PARAMS.get('parameter', 'PARAM_POWER_LOWER_LEVEL'))
 PARAM_POWER_DEBOUNCE_LEVEL = int(PARAMS.get('parameter', 'PARAM_POWER_DEBOUNCE_LEVEL'))
@@ -37,16 +37,10 @@ PARAM_DEBOUNCE_TICK_LIMIT = int(PARAMS.get('parameter', 'PARAM_DEBOUNCE_TICK_LIM
 
 def init():
     # Create data path if not existing
-    Path(REPO_PATH+r'/data/').mkdir(parents=True, exist_ok=True)
+    Path(REPO_PATH + r'/data/').mkdir(parents=True, exist_ok=True)
 
     init_data_aggregator()
-    init_telegram()
     init_data_container()
-
-
-def init_telegram():
-    global TelegramHandler_object
-    TelegramHandler_object = TelegramHandler()
 
 
 def init_data_aggregator():
@@ -61,18 +55,18 @@ def init_data_container():
 
 def cyclic_telegram_handler():
     global TelegramHandler_object
-    if TelegramHandler_object:
-        while 1:
-            TelegramHandler_object.start_listening()
-            time.sleep(10)
-            now = datetime.now()
-            current_time = now.strftime("%H:%M:%S")
-            print("Process Telegram Current Time =", current_time)
+    read_successful, cfg_token = get_configuration("telegram")
+    if read_successful:
+        # Create telegram handler object
+        TelegramHandler_object = TelegramHandler(cfg_token["token"])
+        TelegramHandler_object.start()
     else:
-        print('Telegram bot is Invalid - This is critical')
+        print("Telegram Handler Config not valid")
 
 
 def cyclic_state_machine_handler():
+    global TelegramHandler_object
+
     while 1:
         # Get new value
         read_power_mw = DataAggregator_object.get_dev_value() * PARAM_EMETER_PLUG_RESOLUTION
