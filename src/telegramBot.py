@@ -122,7 +122,8 @@ class TelegramHandler:
             [
                 InlineKeyboardButton("< 1 Stunde", callback_data='1'),
                 InlineKeyboardButton(">= 1 Stunde", callback_data='2'),
-            ]
+            ],
+            [InlineKeyboardButton("Weiß nicht", callback_data='3')],
         ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
