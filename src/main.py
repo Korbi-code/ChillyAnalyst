@@ -80,6 +80,7 @@ def cyclic_state_machine_handler():
                     DataContainer_object.enable_acquisition()
                     cyclic_state_machine_handler.detection_state = 'MEASURE'
                     TelegramHandler_object.send_message("Start Detected")
+                    TelegramHandler_object.send_user_question()
                     cyclic_state_machine_handler.debounce_timer = 0
                     _LOGGER.info("Start Detected - State Transition to MEASURE")
 

@@ -4,9 +4,9 @@
 # Import Modules
 import os
 import csv
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 import telegram
-from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext)
+from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext, CallbackQueryHandler)
 import configparser
 
 # Import Class
@@ -56,9 +56,10 @@ class TelegramHandler:
         dispatcher.add_handler(
             MessageHandler(Filters.text & ~Filters.command, self.handle_new_text_message, run_async=True))
 
+        dispatcher.add_handler(CallbackQueryHandler(self.selected_button))
+
         # Start the Bot
         self.updater.start_polling()
-
 
     def handle_new_text_message(self, update: Update, context: CallbackContext) -> int:
         # Get user properties
@@ -117,9 +118,25 @@ class TelegramHandler:
                     _LOGGER.debug("Send HTML: " + str(png_path))
 
     def send_user_question(self):
-        reply_keyboard = [[' < 1 Stunde ', '>= 1 Stunde']]
+        keyboard = [
+            [
+                InlineKeyboardButton("< 1 Stunde", callback_data='1'),
+                InlineKeyboardButton(">= 1 Stunde", callback_data='2'),
+            ]
+        ]
 
-        self.bot.reply_text(
-            'Wird der Waschvorgang länger oder kürzer als eine Stunde laufen ?',
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-        )
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        if os.path.exists(self.subscribed_users_file):
+            with open(self.subscribed_users_file, newline='') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                for row in reader:
+                    self.bot.send_message(row[0], 'Wird der Waschvorgang länger oder kürzer als eine Stunde laufen ?',
+                                          reply_markup=reply_markup)
+
+    def selected_button(self, update: Update, _: CallbackContext) -> None:
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(text=f"Selected option: {query.data}")
+
+
