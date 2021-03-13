@@ -18,6 +18,7 @@ detected_device_is_valid = False
 deviceName = False
 power = 0
 valid_ips = []
+connection_timeout_debounce = 0
 
 # TODO why?
 testIP = "8.8.8.8"
@@ -28,7 +29,6 @@ host = socket.gethostname()
 myIP = socket.gethostbyname(socket.gethostname())
 myIP = ipaddr
 ips = myIP.split('.')
-
 
 
 def init_dev_by_alias(search_alias):
@@ -63,10 +63,10 @@ def get_dev_value():
     valid = False
 
     if detected_device_is_valid:
-        value,valid = read_value_from_device_ip(detected_device_ip)
+        value, valid = read_value_from_device_ip(detected_device_ip)
     else:
         value = 0
-    return value,valid
+    return value, valid
 
 
 def get_device_valid():
@@ -93,7 +93,7 @@ def find_device_by_ip(q):
         check_ip = q.get()  # Take element out of q
         ''' http://192.168.0.136/cm?cmnd=DeviceName finds the name set in Tasmota'''
         status_url = 'http://' + (
-                    '%s.%s.%s.%s' % (str(ips[0]), str(ips[1]), str(ips[2]), str(check_ip))) + '/cm?cmnd=Status%208'
+                '%s.%s.%s.%s' % (str(ips[0]), str(ips[1]), str(ips[2]), str(check_ip))) + '/cm?cmnd=Status%208'
         # print(status_url)
         try:
             r = requests.get(url=status_url, timeout=0.3)
@@ -152,6 +152,7 @@ def scanner(search_alias):
 def read_value_from_device_ip(device_ip):
     global detected_device_is_valid
     global detected_device_ip
+    global connection_timeout_debounce
 
     local_power = 0
     status_url = 'http://' + str(device_ip) + '/cm?cmnd=Status%208'
@@ -164,6 +165,7 @@ def read_value_from_device_ip(device_ip):
             if str(json_con).find('ENERGY') != -1:
                 local_power = str(json_con["StatusSNS"]["ENERGY"]["Power"])
                 local_power_valid = True
+                connection_timeout_debounce = 0
                 _LOGGER.debug("RAW Power:" + str(local_power))
         except ValueError as e:
             _LOGGER.info(e)
@@ -173,10 +175,13 @@ def read_value_from_device_ip(device_ip):
             requests.ConnectTimeout, requests.HTTPError, requests.ReadTimeout, requests.Timeout,
             requests.ConnectionError) as e:
         _LOGGER.info(e)
+        connection_timeout_debounce += 1
         local_power = 0  # TODO error message and stop calling
+        pass
+
+    if connection_timeout_debounce > 5:
         detected_device_is_valid = False
         detected_device_ip = False
         valid_ips.clear()
-        pass
 
     return int(local_power), local_power_valid
