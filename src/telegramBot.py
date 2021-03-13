@@ -4,7 +4,7 @@
 # Import Modules
 import os
 import csv
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup
 import telegram
 from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext)
 import configparser
@@ -101,7 +101,6 @@ class TelegramHandler:
 
     def send_message(self, txt):
         if os.path.exists(self.subscribed_users_file):
-            bot = telegram.Bot(self.token)
             with open(self.subscribed_users_file, newline='') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                 for row in reader:
@@ -115,3 +114,11 @@ class TelegramHandler:
                 for row in reader:
                     self.bot.send_document(row[0], document=open(png_path, 'rb'))
                     _LOGGER.debug("Send HTML: " + str(png_path))
+
+    def send_user_question(self):
+        reply_keyboard = [[' < 1 Stunde ', '>= 1 Stunde']]
+
+        self.bot.reply_text(
+            'Wird der Waschvorgang länger oder kürzer als eine Stunde laufen ?',
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+        )

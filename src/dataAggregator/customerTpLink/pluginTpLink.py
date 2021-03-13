@@ -64,7 +64,7 @@ def get_dev_value():
         value = detected_device.emeter_realtime['power_mw']
     else:
         value = 0
-    return value
+    return value, True
 
 
 def get_device_valid():

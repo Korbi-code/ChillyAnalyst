@@ -1,23 +1,26 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-# import module
+# imports
 import configparser
-import os
-import sys
-from pathlib import Path
-#sys.path.append('../')
+
+# Import Module
+from src.chillyLogger import *
+
+# Globals
+_LOGGER = get_logger(__file__)
+
 # imports Tp-Link plugin
 try:
     from src.dataAggregator.customerTpLink import pluginTpLink
 except:
-    print("Tp-Link plugin not available")
+    _LOGGER.warning("Tp-Link plugin not available")
 
 # imports Tasmota plugin
 try:
     from src.dataAggregator.customerTasmota import pluginTasmota
 except:
-    print("Tasmota plugin not available")
+    _LOGGER.warning("Tasmota plugin not available")
 
 
 # Define global REPO_PATH
@@ -42,11 +45,12 @@ class DataAggregator:
 
     def get_dev_value(self):
         value = 0
+        value_valid = False
         if self.customer == 'TpLink':
-            value = pluginTpLink.get_dev_value()
+            value, value_valid = pluginTpLink.get_dev_value()
         elif self.customer == 'Tasmota':
-            value = pluginTasmota.get_dev_value()
-        return value
+            value, value_valid = pluginTasmota.get_dev_value()
+        return value, value_valid
 
     def get_device_valid(self):
         device_valid = False
