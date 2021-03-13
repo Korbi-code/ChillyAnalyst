@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import os
 
-# Import Class
+# Import Module
 sys.path.append(os.getcwd())
 from src.dataAggregator.dataAggregator import DataAggregator
 from src.telegramBot import TelegramHandler
@@ -54,7 +54,7 @@ def cyclic_telegram_handler():
     if read_successful:
         TelegramHandler_object = TelegramHandler(cfg_token["token"])
         TelegramHandler_object.start()
-        _LOGGER.debug("Telegram Handler Startet")
+        _LOGGER.info("Telegram Handler Startet")
     else:
         _LOGGER.error("Telegram access token not found ic config")
 
@@ -64,9 +64,12 @@ def cyclic_state_machine_handler():
 
     while 1:
         # Get new value
-        read_power_mw = DataAggregator_object.get_dev_value() * PARAM_EMETER_PLUG_RESOLUTION
-        DataContainer_object.add_new_value(read_power_mw)
+        read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
+        DataContainer_object.add_new_value(int(read_power_mw * PARAM_EMETER_PLUG_RESOLUTION))
         _LOGGER.debug(read_power_mw)
+
+        if not read_power_mw_valid:
+            TelegramHandler_object.send_message("Device returns invalid value")
 
         # State Machine
         if cyclic_state_machine_handler.detection_state == 'IDLE':

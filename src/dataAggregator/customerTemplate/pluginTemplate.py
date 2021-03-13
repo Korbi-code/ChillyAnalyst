@@ -20,7 +20,7 @@ def get_dev_value():
     '''
     :return: returns the actual emeter value
     '''
-    return value
+    return value, True
 
 
 def get_device_valid():
