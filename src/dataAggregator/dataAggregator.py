@@ -36,6 +36,8 @@ class DataAggregator:
     def __init__(self):
         self.customer = DATAAGGREGATOR_CFG.get('data_aggregator', 'use_plugin')
         self.search_alias = DATAAGGREGATOR_CFG.get('data_aggregator', 'device_name')
+
+    def init_dev(self):
         if self.customer == 'TpLink':
             pluginTpLink.init_dev_by_alias(self.search_alias)
         elif self.customer == 'Tasmota':
