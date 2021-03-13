@@ -150,6 +150,9 @@ def scanner(search_alias):
 
 
 def read_value_from_device_ip(device_ip):
+    global detected_device_is_valid
+    global detected_device_ip
+
     local_power = 0
     status_url = 'http://' + str(device_ip) + '/cm?cmnd=Status%208'
 
@@ -171,6 +174,9 @@ def read_value_from_device_ip(device_ip):
             requests.ConnectionError) as e:
         _LOGGER.info(e)
         local_power = 0  # TODO error message and stop calling
+        detected_device_is_valid = False
+        detected_device_ip = False
+        valid_ips.clear()
         pass
 
     return int(local_power), local_power_valid

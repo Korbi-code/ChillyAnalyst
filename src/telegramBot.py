@@ -59,6 +59,7 @@ class TelegramHandler:
         # Start the Bot
         self.updater.start_polling()
 
+
     def handle_new_text_message(self, update: Update, context: CallbackContext) -> int:
         # Get user properties
         user = update.message.from_user

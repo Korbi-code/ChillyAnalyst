@@ -63,46 +63,59 @@ def cyclic_state_machine_handler():
     global TelegramHandler_object
 
     while 1:
-        # Get new value
-        read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
-        DataContainer_object.add_new_value(int(read_power_mw * PARAM_EMETER_PLUG_RESOLUTION))
-        _LOGGER.debug(read_power_mw)
+        if DataAggregator_object.get_device_valid():
 
-        if not read_power_mw_valid:
-            TelegramHandler_object.send_message("Device returns invalid value")
+            # Get new value
+            read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
+            DataContainer_object.add_new_value(int(read_power_mw * PARAM_EMETER_PLUG_RESOLUTION))
+            _LOGGER.debug(read_power_mw)
 
-        # State Machine
-        if cyclic_state_machine_handler.detection_state == 'IDLE':
-            if read_power_mw > PARAM_POWER_LOWER_LEVEL:
-                cyclic_state_machine_handler.sleep_time = PARAM_MEASURE_TICK_RATE
-                DataContainer_object.enable_acquisition()
-                cyclic_state_machine_handler.detection_state = 'MEASURE'
-                TelegramHandler_object.send_message("Start Detected")
-                cyclic_state_machine_handler.debounce_timer = 0
-                _LOGGER.info("Start Detected - State Transition to MEASURE")
+            if not read_power_mw_valid:
+                TelegramHandler_object.send_message("Device returns invalid value")
 
-        elif cyclic_state_machine_handler.detection_state == 'MEASURE':
-            if read_power_mw <= PARAM_POWER_DEBOUNCE_LEVEL:
-                if cyclic_state_machine_handler.debounce_timer < PARAM_DEBOUNCE_TICK_LIMIT:
-                    cyclic_state_machine_handler.debounce_timer += 1
-                    _LOGGER.info("Debouncing")
+            # State Machine
+            if cyclic_state_machine_handler.detection_state == 'IDLE':
+                if read_power_mw > PARAM_POWER_LOWER_LEVEL:
+                    cyclic_state_machine_handler.sleep_time = PARAM_MEASURE_TICK_RATE
+                    DataContainer_object.enable_acquisition()
+                    cyclic_state_machine_handler.detection_state = 'MEASURE'
+                    TelegramHandler_object.send_message("Start Detected")
+                    cyclic_state_machine_handler.debounce_timer = 0
+                    _LOGGER.info("Start Detected - State Transition to MEASURE")
+
+            elif cyclic_state_machine_handler.detection_state == 'MEASURE':
+                if read_power_mw <= PARAM_POWER_DEBOUNCE_LEVEL:
+                    if cyclic_state_machine_handler.debounce_timer < PARAM_DEBOUNCE_TICK_LIMIT:
+                        cyclic_state_machine_handler.debounce_timer += 1
+                        _LOGGER.info("Debouncing")
+                    else:
+                        DataContainer_object.disable_acquisition()
+                        cyclic_state_machine_handler.detection_state = 'END'
+                        _LOGGER.info("State Transition to END")
                 else:
-                    DataContainer_object.disable_acquisition()
-                    cyclic_state_machine_handler.detection_state = 'END'
-                    _LOGGER.info("State Transition to END")
-            else:
-                cyclic_state_machine_handler.debounce_timer = 0
+                    cyclic_state_machine_handler.debounce_timer = 0
 
-        elif cyclic_state_machine_handler.detection_state == 'END':
-            cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
-            if DataContainer_object.create_graph(PARAM_EMETER_PLUG_RESOLUTION):
-                TelegramHandler_object.send_html(DataContainer_object.get_html())
-            cyclic_state_machine_handler.detection_state = 'IDLE'
-            TelegramHandler_object.send_message("End Detected")
-            _LOGGER.info("End Detected")
+            elif cyclic_state_machine_handler.detection_state == 'END':
+                cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
+                if DataContainer_object.create_graph(PARAM_EMETER_PLUG_RESOLUTION):
+                    TelegramHandler_object.send_html(DataContainer_object.get_html())
+                cyclic_state_machine_handler.detection_state = 'IDLE'
+                TelegramHandler_object.send_message("End Detected")
+                _LOGGER.info("End Detected")
+            else:
+                # not expected to reach this state, if so .... not good
+                _LOGGER.error("Invalid State")
+
         else:
-            # not expected to reach this state, if so .... not good
-            _LOGGER.error("Invalid State")
+            _LOGGER.info("Searching new device")
+            try:
+                TelegramHandler_object.send_message("Searching new device")
+            except:
+                pass
+            cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
+            cyclic_state_machine_handler.detection_state = 'IDLE'
+            DataContainer_object.disable_acquisition()
+            DataAggregator_object.init_dev()
 
         time.sleep(cyclic_state_machine_handler.sleep_time)
 
