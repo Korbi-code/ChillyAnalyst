@@ -140,4 +140,3 @@ class TelegramHandler:
         query.answer()
         query.edit_message_text(text=f"Selected option: {query.data}")
 
-
