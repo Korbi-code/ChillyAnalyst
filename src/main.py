@@ -8,7 +8,6 @@ import configparser
 from pathlib import Path
 import sys
 import os
-import numpy as np
 import collections
 
 # Import Module
@@ -85,7 +84,7 @@ def cyclic_state_machine_handler():
             else:
                 InputFilter_deque.append(read_power_mw)
 
-            read_power_mw_mean = round(np.mean(InputFilter_deque))
+            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque))
             DataContainer_object.add_new_value(int(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
             _LOGGER.debug("RAW: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
