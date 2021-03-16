@@ -39,7 +39,7 @@ sudo apt-get install python3-pip
 ```bash
 git clone https://github.com/Korbi-code/ChillyAnalyst.git
 cd ChillyAnalyst
-git checkout origin/feature/tasmota-plugin-v02
+git checkout origin/master
 ```   
 
 6. Install python dependencies
