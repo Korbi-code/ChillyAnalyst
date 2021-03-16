@@ -51,14 +51,19 @@ def register_new_user(id, firstname, lastname):
     read_successful, cfg_path = get_configuration("telegram")
     path = REPO_PATH + os.path.join(cfg_path["subscribed_users_path"])
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path)
 
-    db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
+        db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
 
-    item = {'id': id, 'firstname': firstname, 'lastname': lastname, 'type': 'basic', 'notification': 'True'}
-    _LOGGER.debug("register_new_user" + str(item))
-    db.insert(item)
+        item = {'id': id, 'firstname': firstname, 'lastname': lastname, 'type': 'basic', 'notification': 'True'}
+        _LOGGER.debug("register_new_user" + str(item))
+        db.insert(item)
+        return True
+
+    except:
+        return False
 
 
 def update_user_entry(id, field, value) -> bool:

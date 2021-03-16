@@ -62,25 +62,32 @@ class TelegramHandler:
             lastname = "None"
 
         # Register new user
-        if message == str(TELEGRAM_CFG.get('telegram', 'password')):
-            if not get_is_user_registered(id):
-                register_new_user(id, firstname, lastname)
+        if not get_is_user_registered(id):
+            if message == str(TELEGRAM_CFG.get('telegram', 'password')):
+                if register_new_user(id, firstname, lastname):
+                    update.message.reply_text('Du bist jetzt registriert!')
+            else:
+                update.message.reply_text('Du bist nicht registriert! Bitte passwort eingeben')
 
-        # Get alive message from bot
-        if message == 'Status':
-            update.message.reply_text('Still running!')
+        else:
+            if message == 'Status':
+                update.message.reply_text('Ich bin noch da!')
 
-        if message == 'Stumm':
-            update_user_entry(id, 'notification', False)
+            if message == 'Stumm':
+                if update_user_entry(id, 'notification', False):
+                    update.message.reply_text('Ich informiere dich nicht mehr!')
 
-        if message == 'Laut':
-            update_user_entry(id, 'notification', True)
+            if message == 'Laut':
+                if update_user_entry(id, 'notification', True):
+                    update.message.reply_text('Ich informiere dich absofort!')
 
-        if message == 'Expert':
-            update_user_entry(id, 'type', 'Expert')
+            if message == 'Expert':
+                if update_user_entry(id, 'type', 'Expert'):
+                    update.message.reply_text('Du bist jetzt Experte! Nice!')
 
-        if message == 'Basic':
-            update_user_entry(id, 'type', 'Basic')
+            if message == 'Basic':
+                if update_user_entry(id, 'type', 'Basic'):
+                    update.message.reply_text('Du bist jetzt Basic Nutzer!')
 
     def send_message(self, txt, level='Basic'):
         active_users = get_all_active_users()
