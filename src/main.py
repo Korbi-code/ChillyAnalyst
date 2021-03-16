@@ -121,7 +121,7 @@ def cyclic_state_machine_handler():
         else:
             _LOGGER.info("Searching new device")
             try:
-                TelegramHandler_object.send_message("Keine Verbindung zur Steckdose! Ich suche!")
+                TelegramHandler_object.send_message("Keine Verbindung zur Steckdose! Ich suche!", level='Expert')
             except:
                 pass
             cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
