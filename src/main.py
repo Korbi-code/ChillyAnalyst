@@ -63,7 +63,7 @@ def cyclic_telegram_handler():
         TelegramHandler_object.start()
         _LOGGER.info("Telegram Handler Startet")
     else:
-        _LOGGER.error("Telegram access token not found ic config")
+        _LOGGER.error("Telegram access token not found in config")
 
 
 def cyclic_state_machine_handler():
@@ -78,15 +78,11 @@ def cyclic_state_machine_handler():
 
             if not read_power_mw_valid:
                 TelegramHandler_object.send_message("Device returns invalid value", level='Expert')
-                value_ll = InputFilter_deque[-1]
-                InputFilter_deque.append(value_ll)
 
-            else:
-                InputFilter_deque.append(read_power_mw)
-
+            InputFilter_deque.append(read_power_mw)
             read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque))
             DataContainer_object.add_new_value(int(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
-            _LOGGER.debug("RAW: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
+            _LOGGER.debug("READ_POWER: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
             # State Machine
             if cyclic_state_machine_handler.detection_state == 'IDLE':

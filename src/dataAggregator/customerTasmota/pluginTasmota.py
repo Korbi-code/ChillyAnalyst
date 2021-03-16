@@ -16,6 +16,7 @@ detected_device = False
 detected_device_ip = False
 detected_device_is_valid = False
 deviceName = False
+raw_power_timeout_safe = 0
 power = 0
 valid_ips = []
 connection_timeout_debounce = 0
@@ -153,6 +154,7 @@ def read_value_from_device_ip(device_ip):
     global detected_device_is_valid
     global detected_device_ip
     global connection_timeout_debounce
+    global raw_power_timeout_safe
 
     local_power = 0
     status_url = 'http://' + str(device_ip) + '/cm?cmnd=Status%208'
@@ -170,18 +172,25 @@ def read_value_from_device_ip(device_ip):
         except ValueError as e:
             _LOGGER.info(e)
             local_power = 0
+            connection_timeout_debounce += 1
             pass
     except (
             requests.ConnectTimeout, requests.HTTPError, requests.ReadTimeout, requests.Timeout,
             requests.ConnectionError) as e:
         _LOGGER.info(e)
         connection_timeout_debounce += 1
-        local_power = 0  # TODO error message and stop calling
+        local_power = 0
         pass
 
     if connection_timeout_debounce > 5:
         detected_device_is_valid = False
         detected_device_ip = False
+        raw_power_timeout_safe = 0
         valid_ips.clear()
 
-    return int(local_power), local_power_valid
+    if local_power_valid:
+        raw_power_timeout_safe = int(local_power)
+
+
+
+    return int(raw_power_timeout_safe), local_power_valid
