@@ -80,5 +80,13 @@ sudo systemctl enable chillyanalyst.service
 sudo reboot
 ``` 
 
+11. Updates
 
+- For updating the program  
+```bash
+cd ChillyAnalyst
+git fetch
+git pull
+sudo systemctl restart chillyanalyst.service
+``` 
 
