@@ -77,7 +77,7 @@ def cyclic_state_machine_handler():
             read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
 
             if not read_power_mw_valid:
-                TelegramHandler_object.send_message("Device returns invalid value")
+                TelegramHandler_object.send_message("Device returns invalid value", level='Expert')
                 value_ll = InputFilter_deque[-1]
                 InputFilter_deque.append(value_ll)
 
@@ -95,7 +95,7 @@ def cyclic_state_machine_handler():
                     DataContainer_object.enable_acquisition()
                     cyclic_state_machine_handler.detection_state = 'MEASURE'
                     TelegramHandler_object.send_message("Start Detected")
-                    TelegramHandler_object.send_user_question()
+                    # TelegramHandler_object.send_user_question()
                     cyclic_state_machine_handler.debounce_timer = 0
                     _LOGGER.info("Start Detected - State Transition to MEASURE")
 
@@ -125,13 +125,14 @@ def cyclic_state_machine_handler():
         else:
             _LOGGER.info("Searching new device")
             try:
-                TelegramHandler_object.send_message("Searching new device")
+                TelegramHandler_object.send_message("Searching new device", level='Expert')
             except:
                 pass
             cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
             cyclic_state_machine_handler.detection_state = 'IDLE'
             DataContainer_object.disable_acquisition()
             DataAggregator_object.init_dev()
+            TelegramHandler_object.send_message("Keine Verbindung zur Steckdose! Ich suche!")
 
         time.sleep(cyclic_state_machine_handler.sleep_time)
 
