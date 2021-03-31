@@ -22,6 +22,12 @@ try:
 except:
     _LOGGER.warning("Tasmota plugin not available")
 
+# imports MQTT plugin
+try:
+    from src.dataAggregator.customerMQTT import pluginMQTT
+except:
+    _LOGGER.warning("MQTT plugin not available")
+
 
 # Define global REPO_PATH
 REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
@@ -42,6 +48,8 @@ class DataAggregator:
             pluginTpLink.init_dev_by_alias(self.search_alias)
         elif self.customer == 'Tasmota':
             pluginTasmota.init_dev_by_alias(self.search_alias)
+        elif self.customer == 'MQTT':
+            pluginMQTT.init_dev_by_alias(self.search_alias)
         else:
             print("No valid customer plugin selected")
 
@@ -52,6 +60,8 @@ class DataAggregator:
             value, value_valid = pluginTpLink.get_dev_value()
         elif self.customer == 'Tasmota':
             value, value_valid = pluginTasmota.get_dev_value()
+        elif self.customer == 'MQTT':
+            value, value_valid = pluginMQTT.get_dev_value()
         return value, value_valid
 
     def get_device_valid(self):
@@ -60,6 +70,8 @@ class DataAggregator:
             device_valid = pluginTpLink.get_device_valid()
         elif self.customer == 'Tasmota':
             device_valid = pluginTasmota.get_device_valid()
+        elif self.customer == 'MQTT':
+            device_valid = pluginMQTT.get_device_valid()
         return device_valid
 
     def get_device_ip(self):
@@ -68,4 +80,6 @@ class DataAggregator:
             ip_address = pluginTpLink.get_device_ip()
         elif self.customer == 'Tasmota':
             ip_address = pluginTasmota.get_device_ip()
+        elif self.customer == 'MQTT':
+            ip_address = pluginMQTT.get_device_ip()
         return ip_address
