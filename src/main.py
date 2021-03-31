@@ -80,8 +80,8 @@ def cyclic_state_machine_handler():
                 TelegramHandler_object.send_message("Device returns invalid value", level='Expert')
 
             InputFilter_deque.append(read_power_mw)
-            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque))
-            DataContainer_object.add_new_value(int(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
+            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque),3)
+            DataContainer_object.add_new_value(float(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
             _LOGGER.debug("READ_POWER: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
             # State Machine

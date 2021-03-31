@@ -52,6 +52,7 @@ class DataContainer:
     def create_graph(self, value_resolution):
 
         y = [element * value_resolution for element in self.data_container]
+        y = y[::10]
         x = list(range(len(y)))
 
         if not os.path.exists(self.data_path):
@@ -68,7 +69,7 @@ class DataContainer:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
         plotly.offline.plot({
-            "data": [go.Scatter(x=x, y=y)],
+            "data": [go.Scatter(x=x, y=y,line_shape = 'spline')],
             "layout": go.Layout(title='Washi Washi Run',
                                 yaxis=dict(
                                     title="Power [W]"
