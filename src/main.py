@@ -84,6 +84,10 @@ def cyclic_state_machine_handler():
             DataContainer_object.add_new_value(float(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
             _LOGGER.debug("READ_POWER: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
+            if TelegramHandler_object.graph_requested():
+                if DataContainer_object.create_graph():
+                    TelegramHandler_object.send_html(DataContainer_object.get_html())
+
             # State Machine
             if cyclic_state_machine_handler.detection_state == 'IDLE':
                 if read_power_mw_mean > PARAM_POWER_LOWER_LEVEL:
@@ -109,8 +113,6 @@ def cyclic_state_machine_handler():
 
             elif cyclic_state_machine_handler.detection_state == 'END':
                 cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
-                if DataContainer_object.create_graph(PARAM_EMETER_PLUG_RESOLUTION):
-                    TelegramHandler_object.send_html(DataContainer_object.get_html())
                 cyclic_state_machine_handler.detection_state = 'IDLE'
                 TelegramHandler_object.send_message("End Detected")
                 _LOGGER.info("End Detected")
