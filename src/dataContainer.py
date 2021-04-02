@@ -35,6 +35,7 @@ class DataContainer:
         self.path_to_file = str(self.data_path) + str(self.file_name)
         Path(self.data_path).mkdir(parents=True, exist_ok=True)
         self.start_date = 0
+        self.end_date = 0
 
     def add_new_value(self, value):
         if self.mode == 'IDLE':
@@ -51,10 +52,11 @@ class DataContainer:
 
     def disable_acquisition(self):
         self.mode == 'IDLE'
+        self.end_date = datetime.datetime.now()
 
-    def create_graph(self, value_resolution):
+    def create_graph(self):
 
-        y = [element * value_resolution for element in self.data_container]
+        y = self.data_container
         x = []
         size_of_pre_value_buffer = int(DATACONTAINER_CFG.get('data_container', 'pre_value_buffer'))
         time_delta_in_idle = int(DATACONTAINER_CFG.get('parameter', 'PARAM_IDLE_TICK_RATE'))
@@ -84,7 +86,7 @@ class DataContainer:
 
         plotly.offline.plot({
             "data": [go.Scatter(x=x, y=y)],
-            "layout": go.Layout(title='Waschvorgang vom ' + str(datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')),
+            "layout": go.Layout(title='Waschvorgang vom ' + str(self.start_date.strftime('%Y-%m-%d %H:%M:%S')),
                                 yaxis=dict(
                                     title="Leistung [W]"
                                 ),
@@ -94,9 +96,3 @@ class DataContainer:
         }, auto_open=True, image='png', filename=self.path_to_file, include_plotlyjs='cdn')
 
         return True
-
-    def get_html(self):
-        if os.path.isfile(self.path_to_file):
-            return self.path_to_file
-        else:
-            return False
