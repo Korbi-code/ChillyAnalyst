@@ -84,9 +84,14 @@ class DataContainer:
                 except Exception as e:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+        if self.start_date != 0:
+            title_message = 'Waschvorgang vom ' + str(self.start_date.strftime('%Y-%m-%d %H:%M:%S'))
+        else:
+            title_message = 'Kein Waschvorgang erkannt'
+
         plotly.offline.plot({
             "data": [go.Scatter(x=x, y=y)],
-            "layout": go.Layout(title='Waschvorgang vom ' + str(self.start_date.strftime('%Y-%m-%d %H:%M:%S')),
+            "layout": go.Layout(title=title_message,
                                 yaxis=dict(
                                     title="Leistung [W]"
                                 ),
@@ -96,3 +101,9 @@ class DataContainer:
         }, auto_open=True, image='png', filename=self.path_to_file, include_plotlyjs='cdn')
 
         return True
+
+    def get_html(self):
+        if os.path.isfile(self.path_to_file):
+            return self.path_to_file
+        else:
+            return False
