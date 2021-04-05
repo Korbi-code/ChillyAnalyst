@@ -75,7 +75,7 @@ sudo systemctl enable chillyanalyst.service
 
 10. Final reboot
 
-- Congrats, you finished the installation, now you can eat your second banana while the system reboots! 
+- Congrats, you finished the installation!
 ```bash
 sudo reboot
 ``` 
@@ -90,3 +90,26 @@ git pull
 sudo systemctl restart chillyanalyst.service
 ``` 
 
+# Design Doc
+
+Parameter Description
+
+| NAME          | Description   
+| ------------- |:-------------:|
+| PARAM_POWER_LOWER_LEVEL         | Power level to detect start after filter
+| PARAM_POWER_DEBOUNCE_LEVEL      | When power is below this level debouncing is active    
+| PARAM_EMETER_PLUG_RESOLUTION    | Factor to convert raw power to power in [W]  
+| PARAM_IDLE_TICK_RATE            | Read power rate during idle state      
+| PARAM_MEASURE_TICK_RATE         | Read power rate during measure phase e.g after start till end     
+| PARAM_DEBOUNCE_TICK_LIMIT       | Amount of ticks power level can be at or below PARAM_POWER_DEBOUNCE_LEVEL, if so "end" is detected       
+| FILTER_QUEUE                    | Size of fifo queue to calculate the mean value 
+
+
+Input filtering
+
+![Alt text](doc/Input.png?raw=true "Input Filter")
+
+
+State Timing
+
+![Alt text](doc/StateTiming.png?raw=true "State Timing")

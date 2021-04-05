@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 import os
 import shutil
+import datetime
 
 # Define global REPO_PATH
 REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
@@ -33,6 +34,8 @@ class DataContainer:
         self.file_name = DATACONTAINER_CFG.get('data_container', 'file_name') + '.html'
         self.path_to_file = str(self.data_path) + str(self.file_name)
         Path(self.data_path).mkdir(parents=True, exist_ok=True)
+        self.start_date = 0
+        self.end_date = 0
 
     def add_new_value(self, value):
         if self.mode == 'IDLE':
@@ -45,14 +48,28 @@ class DataContainer:
         for elem in self.value_buffer:
             self.data_container.append(elem)
         self.mode = 'ACQUISITION'
+        self.start_date = datetime.datetime.now()
 
     def disable_acquisition(self):
         self.mode == 'IDLE'
+        self.end_date = datetime.datetime.now()
 
-    def create_graph(self, value_resolution):
+    def create_graph(self):
 
-        y = [element * value_resolution for element in self.data_container]
-        x = list(range(len(y)))
+        y = self.data_container
+        x = []
+        size_of_pre_value_buffer = int(DATACONTAINER_CFG.get('data_container', 'pre_value_buffer'))
+        time_delta_in_idle = int(DATACONTAINER_CFG.get('parameter', 'PARAM_IDLE_TICK_RATE'))
+        time_delta_in_measure = int(DATACONTAINER_CFG.get('parameter', 'PARAM_MEASURE_TICK_RATE'))
+        for index, value in enumerate(y):
+            if index < size_of_pre_value_buffer:
+                print((size_of_pre_value_buffer - index) * int(time_delta_in_idle))
+                x.append(self.start_date - datetime.timedelta(
+                    seconds=((size_of_pre_value_buffer - index) * int(time_delta_in_idle))))
+            elif index == size_of_pre_value_buffer:
+                x.append(self.start_date)
+            else:
+                x.append(x[-1] + datetime.timedelta(seconds=int(time_delta_in_measure)))
 
         if not os.path.exists(self.data_path):
             os.mkdir(self.data_path)
@@ -67,16 +84,21 @@ class DataContainer:
                 except Exception as e:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+        if self.start_date != 0:
+            title_message = 'Waschvorgang vom ' + str(self.start_date.strftime('%Y-%m-%d %H:%M:%S'))
+        else:
+            title_message = 'Kein Waschvorgang erkannt'
+
         plotly.offline.plot({
             "data": [go.Scatter(x=x, y=y)],
-            "layout": go.Layout(title='Washi Washi Run',
+            "layout": go.Layout(title=title_message,
                                 yaxis=dict(
-                                    title="Power [W]"
+                                    title="Leistung [W]"
                                 ),
                                 xaxis=dict(
-                                    title="Ticks"
+                                    title="Uhrzeit"
                                 ))
-        }, auto_open=True, image='png', filename=self.path_to_file)
+        }, auto_open=True, image='png', filename=self.path_to_file, include_plotlyjs='cdn')
 
         return True
 
