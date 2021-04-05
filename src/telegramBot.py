@@ -31,6 +31,7 @@ class TelegramHandler:
         self.password = TELEGRAM_CFG.get('telegram', 'password')
         self.updater = False
         self.bot = False
+        self.graph_request = False
 
     def start(self):
         # Create the Updater and pass it your bot's token.
@@ -88,6 +89,16 @@ class TelegramHandler:
             if message == 'Basic':
                 if update_user_entry(id, 'type', 'Basic'):
                     update.message.reply_text('Du bist jetzt Basic Nutzer!')
+
+            if message == 'Graph':
+                self.graph_request = True
+
+    def graph_requested(self):
+        if self.graph_request:
+            self.graph_request = False
+            return True
+        else:
+            return False
 
     def send_message(self, txt, level='Basic'):
         active_users = get_all_active_users()

@@ -33,11 +33,11 @@ ips = myIP.split('.')
 
 
 def init_dev_by_alias(search_alias):
-    '''
+    """
     Init Device by alias
     :param search_alias:
     :return:
-    '''
+    """
     global detected_device
     global detected_device_ip
     global detected_device_is_valid
@@ -161,7 +161,7 @@ def read_value_from_device_ip(device_ip):
 
     local_power_valid = False
     try:
-        r = requests.get(url=status_url, timeout=0.3)
+        r = requests.get(url=status_url, timeout=0.6,verify=False)
         try:
             json_con = r.json()
             if str(json_con).find('ENERGY') != -1:
