@@ -5,8 +5,7 @@
 import os
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 import telegram
-from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext, CallbackQueryHandler, ConversationHandler,
-                          CommandHandler)
+from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext, CallbackQueryHandler)
 import configparser
 
 # Import Class
