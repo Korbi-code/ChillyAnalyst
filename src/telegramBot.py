@@ -24,15 +24,15 @@ configFilePath = REPO_PATH + r'/config/config.cfg'
 TELEGRAM_CFG.read(configFilePath)
 
 
-def help(update: Update, _: CallbackContext) -> int:
-    reply_keyboard = [['Stumm', 'Laut', 'Expert', 'Basic', 'Graph']]
+def conv_help(update: Update, _: CallbackContext) -> int:
+    reply_keyboard = ['Stumm', 'Laut', 'Expert', 'Basic', 'Graph']
     update.message.reply_text(
         "Wähle eine der folgenden Optionen", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
     return ConversationHandler.END
 
 
-def cancel(update: Update, _: CallbackContext) -> int:
+def conv_cancel(update: Update, _: CallbackContext) -> int:
     update.message.reply_text(
         'Hilfe abgebrochen!', reply_markup=ReplyKeyboardRemove()
     )
@@ -59,11 +59,11 @@ class TelegramHandler:
 
         # Conversation handler is started with /help
         conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('help', help)],
+            entry_points=[CommandHandler('help', conv_help)],
             states={
                 1: [MessageHandler(Filters.regex('^(Stumm|Laut|Expert|Basic|Graph)$'), self.handle_new_text_message)],
             },
-            fallbacks=[CommandHandler('cancel', cancel)],
+            fallbacks=[CommandHandler('cancel', conv_cancel)],
         )
 
         dispatcher.add_handler(conv_handler)
@@ -120,6 +120,7 @@ class TelegramHandler:
 
     def graph_requested(self):
         if self.graph_request:
+            _LOGGER.debug("Graph request reset")
             self.graph_request = False
             return True
         else:
@@ -134,10 +135,10 @@ class TelegramHandler:
                         self.bot.send_message(user['id'], txt)
                         _LOGGER.debug("Send Message: " + str(txt))
 
-    def send_html(self, png_path):
+    def send_html(self, file_path):
         local_active_users = get_all_active_users()
         if local_active_users:
             for user in local_active_users:
                 if user['notification']:
-                    self.bot.send_document(user['id'], document=open(png_path, 'rb'))
-                    _LOGGER.debug("Send HTML: " + str(png_path))
+                    self.bot.send_document(user['id'], document=open(file_path, 'rb'))
+                    _LOGGER.debug("Send HTML: " + str(file_path))
