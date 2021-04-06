@@ -25,7 +25,7 @@ TELEGRAM_CFG.read(configFilePath)
 
 
 def conv_help(update: Update, _: CallbackContext) -> int:
-    reply_keyboard = ['Stumm', 'Laut', 'Expert', 'Basic', 'Graph']
+    reply_keyboard = [['Stumm', 'Laut', 'Expert', 'Basic', 'Graph']]
     update.message.reply_text(
         "Wähle eine der folgenden Optionen", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
