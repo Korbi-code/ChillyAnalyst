@@ -2,16 +2,15 @@
 # -*- coding:utf-8 -*-
 
 # Import Modules
-import os
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
-import telegram
-from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext, CallbackQueryHandler, ConversationHandler,
-                          CommandHandler)
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import (Updater, MessageHandler, Filters, CallbackContext, CommandHandler, ConversationHandler)
 import configparser
+from pathlib import Path
+import sys
 
 # Import Class
-from src.chillyLogger import *
-from src.userHandler import *
+from src.chillyLogger import get_logger
+from src.userHandler import get_is_user_registered, register_new_user, get_all_active_users, update_user_entry
 
 # Define global REPO_PATH
 REPO_PATH = str((Path(sys.argv[0]).parents[1]).resolve())
@@ -23,6 +22,21 @@ _LOGGER = get_logger(__file__)
 TELEGRAM_CFG = configparser.ConfigParser()
 configFilePath = REPO_PATH + r'/config/config.cfg'
 TELEGRAM_CFG.read(configFilePath)
+
+
+def conv_help(update: Update, _: CallbackContext) -> int:
+    reply_keyboard = [['Stumm', 'Laut', 'Expert', 'Basic', 'Graph']]
+    update.message.reply_text(
+        "Wähle eine der folgenden Optionen", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+    return ConversationHandler.END
+
+
+def conv_cancel(update: Update, _: CallbackContext) -> int:
+    update.message.reply_text(
+        'Hilfe abgebrochen!', reply_markup=ReplyKeyboardRemove()
+    )
+    return ConversationHandler.END
 
 
 class TelegramHandler:
@@ -43,98 +57,88 @@ class TelegramHandler:
         dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
+        # Conversation handler is started with /help
+        conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('help', conv_help)],
+            states={
+                1: [MessageHandler(Filters.regex('^(Stumm|Laut|Expert|Basic|Graph)$'), self.handle_new_text_message)],
+            },
+            fallbacks=[CommandHandler('cancel', conv_cancel)],
+        )
+
+        dispatcher.add_handler(conv_handler)
+
+        # Message handler for message send outside the conversation handler
         dispatcher.add_handler(
             MessageHandler(Filters.text & ~Filters.command, self.handle_new_text_message, run_async=True))
-
-        dispatcher.add_handler(CallbackQueryHandler(self.selected_button))
 
         # Start the Bot
         self.updater.start_polling()
 
-    def handle_new_text_message(self, update: Update, context: CallbackContext) -> int:
+    def handle_new_text_message(self, update: Update, _: CallbackContext) -> int:
         # Get user properties
-        user = update.message.from_user
-        message = update.message.text
-        id = user["id"]
-        firstname = user["first_name"]
+        local_user = update.message.from_user
+        local_message = update.message.text
+        local_id = local_user["id"]
+        local_firstname = local_user["first_name"]
         try:
-            lastname = user["last_name"]
+            local_lastname = local_user["last_name"]
         except KeyError:
-            lastname = "None"
+            local_lastname = "None"
 
         # Register new user
-        if not get_is_user_registered(id):
-            if message == str(TELEGRAM_CFG.get('telegram', 'password')):
-                if register_new_user(id, firstname, lastname):
+        if not get_is_user_registered(local_id):
+            if local_message == str(TELEGRAM_CFG.get('telegram', 'password')):
+                if register_new_user(local_id, local_firstname, local_lastname):
                     update.message.reply_text('Du bist jetzt registriert!')
+                else:
+                    update.message.reply_text('Registrierung war nicht erfolgreich! ')
             else:
                 update.message.reply_text('Du bist nicht registriert! Bitte passwort eingeben')
 
         else:
-            if message == 'Status':
+            if local_message == 'Status':
                 update.message.reply_text('Ich bin noch da!')
 
-            if message == 'Stumm':
-                if update_user_entry(id, 'notification', False):
-                    update.message.reply_text('Ich informiere dich nicht mehr!')
+            elif local_message == 'Stumm' and update_user_entry(local_id, 'notification', False):
+                update.message.reply_text('Ich informiere dich nicht mehr!')
 
-            if message == 'Laut':
-                if update_user_entry(id, 'notification', True):
-                    update.message.reply_text('Ich informiere dich absofort!')
+            elif local_message == 'Laut' and update_user_entry(local_id, 'notification', True):
+                update.message.reply_text('Ich informiere dich absofort!')
 
-            if message == 'Expert':
-                if update_user_entry(id, 'type', 'Expert'):
-                    update.message.reply_text('Du bist jetzt Experte! Nice!')
+            elif local_message == 'Expert' and update_user_entry(local_id, 'type', 'Expert'):
+                update.message.reply_text('Du bist jetzt Experte! Nice!')
 
-            if message == 'Basic':
-                if update_user_entry(id, 'type', 'Basic'):
-                    update.message.reply_text('Du bist jetzt Basic Nutzer!')
+            elif local_message == 'Basic' and update_user_entry(local_id, 'type', 'Basic'):
+                update.message.reply_text('Du bist jetzt Basic Nutzer!')
 
-            if message == 'Graph':
+            elif local_message == 'Graph':
                 self.graph_request = True
+
+            else:
+                update.message.reply_text('Das ist kein gültiger Befehl. Für hilfe /help ')
 
     def graph_requested(self):
         if self.graph_request:
+            _LOGGER.debug("Graph request reset")
             self.graph_request = False
             return True
         else:
             return False
 
     def send_message(self, txt, level='Basic'):
-        active_users = get_all_active_users()
-        if active_users:
-            for user in active_users:
+        local_active_users = get_all_active_users()
+        if local_active_users:
+            for user in local_active_users:
                 if user['notification']:
                     if level == user['type'] or level == 'Basic':
                         self.bot.send_message(user['id'], txt)
                         _LOGGER.debug("Send Message: " + str(txt))
 
-    def send_html(self, png_path):
-        active_users = get_all_active_users()
-        if active_users:
-            for user in active_users:
+    def send_html(self, file_path):
+        local_active_users = get_all_active_users()
+        if local_active_users:
+            for user in local_active_users:
                 if user['notification']:
-                    self.bot.send_document(user['id'], document=open(png_path, 'rb'))
-                    _LOGGER.debug("Send HTML: " + str(png_path))
-
-    def send_user_question(self):
-        keyboard = [
-            [
-                InlineKeyboardButton("< 1 Stunde", callback_data='1'),
-                InlineKeyboardButton(">= 1 Stunde", callback_data='2'),
-            ],
-            [InlineKeyboardButton("Weiß nicht", callback_data='3')],
-        ]
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        active_users = get_all_active_users()
-        if active_users:
-            for user in active_users:
-                self.bot.send_message(user['id'], 'Wird der Waschvorgang länger oder kürzer als eine Stunde laufen ?',
-                                      reply_markup=reply_markup)
-
-    def selected_button(self, update: Update, _: CallbackContext) -> None:
-        query = update.callback_query
-        query.answer()
-        query.edit_message_text(text=f"Selected option: {query.data}")
+                    self.bot.send_document(user['id'], document=open(file_path, 'rb'))
+                    _LOGGER.debug("Send HTML: " + str(file_path))
