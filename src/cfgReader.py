@@ -8,6 +8,7 @@ import pathlib
 REPO_BASE_FOLDER = pathlib.Path(__file__).parent.absolute().parents[0]
 PATH_TO_CONFIG_FILE = REPO_BASE_FOLDER.joinpath('config/config.cfg')
 
+
 def get_configuration(section):
     conf_parser = ConfigParser()
     conf_parser.read(PATH_TO_CONFIG_FILE)
@@ -19,4 +20,3 @@ def get_configuration(section):
         return True, dict_configuration
     else:
         return False, dict_configuration
-

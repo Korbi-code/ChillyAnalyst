@@ -75,13 +75,14 @@ def cyclic_state_machine_handler():
 
             # Get new value
             read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
+            read_power_mw = round(float(read_power_mw * PARAM_EMETER_PLUG_RESOLUTION),1)
 
             if not read_power_mw_valid:
                 TelegramHandler_object.send_message("Device returns invalid value", level='Expert')
 
             InputFilter_deque.append(read_power_mw)
-            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque),3)
-            DataContainer_object.add_new_value(float(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
+            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque),1)
+            DataContainer_object.add_new_value(read_power_mw_mean)
             _LOGGER.debug("READ_POWER: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
             if TelegramHandler_object.graph_requested():
@@ -103,11 +104,11 @@ def cyclic_state_machine_handler():
                 if read_power_mw_mean <= PARAM_POWER_DEBOUNCE_LEVEL:
                     if cyclic_state_machine_handler.debounce_timer < PARAM_DEBOUNCE_TICK_LIMIT:
                         cyclic_state_machine_handler.debounce_timer += 1
-                        _LOGGER.info("Debouncing")
+                        _LOGGER.debug("Debouncing")
                     else:
                         DataContainer_object.disable_acquisition()
                         cyclic_state_machine_handler.detection_state = 'END'
-                        _LOGGER.info("State Transition to END")
+                        _LOGGER.debug("State Transition to END")
                 else:
                     cyclic_state_machine_handler.debounce_timer = 0
 
