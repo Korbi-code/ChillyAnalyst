@@ -1,4 +1,5 @@
 # Chilly Analyst
+[![DeepSource](https://static.deepsource.io/deepsource-badge-light-mini.svg)](https://deepsource.io/gh/Korbi-code/ChillyAnalyst/?ref=repository-badge)
 
 # Setup
 
