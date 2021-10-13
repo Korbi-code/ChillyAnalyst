@@ -73,7 +73,7 @@ def update_user_entry(id, field, value) -> bool:
     try:
         db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
         db_field = Query()
-        db.search(db_field.type == id)
+        db.search(db_field.id == id)
         db.update({field: value})
         return True
 
