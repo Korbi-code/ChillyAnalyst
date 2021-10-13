@@ -1,6 +1,21 @@
 # Chilly Analyst
 [![DeepSource](https://static.deepsource.io/deepsource-badge-light-mini.svg)](https://deepsource.io/gh/Korbi-code/ChillyAnalyst/?ref=repository-badge)
 
+# Description
+You are annoyed by your washing machine because the displayed time at the beginning of the programm was not correct ?  
+You want to get a notifiaction to your smartphone when the programm is finished ? 
+..
+..
+Then we have a solution!  
+
+## How does it work ? 
+By setting up a small script which is reading the current power from a compatible wall plug, observe the power level and sends a notifcation via your own telegramBot to your device which is running a telegram application. 
+
+## What do I need ? 
+- Device which can run a python 3.8 Script with internet connection (Raspberry Pi recommended) 
+- Telegram Application
+- Wall plug with power measurement running Tasmota Firmware
+
 # Setup
 
 1. Install Raspberry Pi OS
@@ -25,7 +40,7 @@ sudo raspi-config
  - Set Hostname to "chillyanalyst"
 
 3. Reboot your Raspberry Pi
- ```bash
+```bash
 sudo reboot
 ```   
 
