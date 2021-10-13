@@ -9,10 +9,10 @@ You want to get a notifiaction to your smartphone when the programm is finished 
 Then we have a solution!  
 
 ## How does it work ? 
-By setting up a small script which is reading the current power from a compatible wall plug, observe the power level and sends a notifcation via your own telegramBot to your device which is running a telegram application. 
+By setting up a small script which is reading the current power from a compatible wall plug, observe the power level and sends a notifcation via your own Telegram bot to your device which is running the Telegram messenger app. 
 
 ## What do I need ? 
-- Device which can run a python 3.8 Script with internet connection (Raspberry Pi recommended) 
+- Device which can run a Python3 application with internet connection (Raspberry Pi recommended) 
 - Telegram Application
 - Wall plug with power measurement running Tasmota Firmware
 
@@ -24,7 +24,6 @@ By setting up a small script which is reading the current power from a compatibl
 
 - Tested with Full Pi OS Desktop installation approx. 2.5GB
     - Light version can work, but it is not tested
-
  
 2. Connect hardware
 - Fire up your Raspberry Pi (e.g connect 5V)
@@ -44,10 +43,11 @@ sudo raspi-config
 sudo reboot
 ```   
 
-4. Install git, python3 and docker-compose (most likely it will already be installed)
+4. Install git, python3.7 (most likely it will already be installed)
 ```bash
 sudo apt install git 
-sudo apt-get install python3-pip
+sudo apt-get install python3.7
+
 ``` 
 
 
