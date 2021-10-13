@@ -51,7 +51,7 @@ class DataContainer:
         self.start_date = datetime.datetime.now()
 
     def disable_acquisition(self):
-        self.mode == 'IDLE'
+        self.mode = 'IDLE'
         self.end_date = datetime.datetime.now()
 
     def create_graph(self):
