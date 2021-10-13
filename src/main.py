@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import os
 import collections
+import datetime
 
 # Import Module
 sys.path.append(os.getcwd())
@@ -38,6 +39,7 @@ PARAM_EMETER_PLUG_RESOLUTION = float(PARAMS.get('parameter', 'PARAM_EMETER_PLUG_
 PARAM_IDLE_TICK_RATE = int(PARAMS.get('parameter', 'PARAM_IDLE_TICK_RATE'))
 PARAM_MEASURE_TICK_RATE = int(PARAMS.get('parameter', 'PARAM_MEASURE_TICK_RATE'))
 PARAM_DEBOUNCE_TICK_LIMIT = int(PARAMS.get('parameter', 'PARAM_DEBOUNCE_TICK_LIMIT'))
+CONNECTION_LOST_TIMER_IN_MIN = int(PARAMS.get('parameter', 'CONNECTION_LOST_TIMER_IN_MIN'))
 
 
 def init():
@@ -70,18 +72,22 @@ def cyclic_state_machine_handler():
     global TelegramHandler_object
     global InputFilter_deque
 
+    last_valid_timestamp = datetime.datetime.now()
+
     while 1:
         if DataAggregator_object.get_device_valid():
+            last_valid_timestamp = datetime.datetime.now()
 
             # Get new value
             read_power_mw, read_power_mw_valid = DataAggregator_object.get_dev_value()
+            read_power_mw = round(float(read_power_mw * PARAM_EMETER_PLUG_RESOLUTION), 1)
 
             if not read_power_mw_valid:
                 TelegramHandler_object.send_message("Device returns invalid value", level='Expert')
 
             InputFilter_deque.append(read_power_mw)
-            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque),3)
-            DataContainer_object.add_new_value(float(read_power_mw_mean * PARAM_EMETER_PLUG_RESOLUTION))
+            read_power_mw_mean = round(sum(InputFilter_deque) / len(InputFilter_deque), 1)
+            DataContainer_object.add_new_value(read_power_mw_mean)
             _LOGGER.debug("READ_POWER: " + str(read_power_mw) + " MEAN:" + str(read_power_mw_mean))
 
             if TelegramHandler_object.graph_requested():
@@ -103,11 +109,11 @@ def cyclic_state_machine_handler():
                 if read_power_mw_mean <= PARAM_POWER_DEBOUNCE_LEVEL:
                     if cyclic_state_machine_handler.debounce_timer < PARAM_DEBOUNCE_TICK_LIMIT:
                         cyclic_state_machine_handler.debounce_timer += 1
-                        _LOGGER.info("Debouncing")
+                        _LOGGER.debug("Debouncing")
                     else:
                         DataContainer_object.disable_acquisition()
                         cyclic_state_machine_handler.detection_state = 'END'
-                        _LOGGER.info("State Transition to END")
+                        _LOGGER.debug("State Transition to END")
                 else:
                     cyclic_state_machine_handler.debounce_timer = 0
 
@@ -126,9 +132,15 @@ def cyclic_state_machine_handler():
                 TelegramHandler_object.send_message("Keine Verbindung zur Steckdose! Ich suche!", level='Expert')
             except:
                 pass
-            cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
-            cyclic_state_machine_handler.detection_state = 'IDLE'
-            DataContainer_object.disable_acquisition()
+
+            _LOGGER.debug("Connection lost in min: " +str(((datetime.datetime.now() - last_valid_timestamp).total_seconds()) / 60))
+
+            if ((datetime.datetime.now() - last_valid_timestamp).total_seconds()) / 60 >= CONNECTION_LOST_TIMER_IN_MIN:
+                cyclic_state_machine_handler.sleep_time = PARAM_IDLE_TICK_RATE
+                cyclic_state_machine_handler.detection_state = 'IDLE'
+                DataContainer_object.disable_acquisition()
+                _LOGGER.info("Connection lost time reached")
+
             DataAggregator_object.init_dev()
 
         time.sleep(cyclic_state_machine_handler.sleep_time)

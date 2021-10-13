@@ -51,7 +51,7 @@ class DataContainer:
         self.start_date = datetime.datetime.now()
 
     def disable_acquisition(self):
-        self.mode == 'IDLE'
+        self.mode = 'IDLE'
         self.end_date = datetime.datetime.now()
 
     def create_graph(self):
@@ -63,7 +63,6 @@ class DataContainer:
         time_delta_in_measure = int(DATACONTAINER_CFG.get('parameter', 'PARAM_MEASURE_TICK_RATE'))
         for index, value in enumerate(y):
             if index < size_of_pre_value_buffer:
-                print((size_of_pre_value_buffer - index) * int(time_delta_in_idle))
                 x.append(self.start_date - datetime.timedelta(
                     seconds=((size_of_pre_value_buffer - index) * int(time_delta_in_idle))))
             elif index == size_of_pre_value_buffer:

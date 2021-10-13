@@ -27,8 +27,8 @@ def get_is_user_registered(id) -> bool:
                 detected = True
         return detected
 
-    except:
-        _LOGGER.info("No users registered")
+    except Exception as e:
+        _LOGGER.info(e)
         return False
 
 
@@ -42,8 +42,8 @@ def get_all_active_users():
         db.search(db_field.type == 'id')
         return db
 
-    except:
-        _LOGGER.info("No users registered")
+    except Exception as e:
+        _LOGGER.info(e)
         return False
 
 
@@ -62,7 +62,8 @@ def register_new_user(id, firstname, lastname):
         db.insert(item)
         return True
 
-    except:
+    except Exception as e:
+        _LOGGER.info(e)
         return False
 
 
@@ -73,10 +74,10 @@ def update_user_entry(id, field, value) -> bool:
     try:
         db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
         db_field = Query()
-        db.search(db_field.type == id)
+        db.search(db_field.id == id)
         db.update({field: value})
         return True
 
-    except:
-        _LOGGER.info("No users registered")
+    except Exception as e:
+        _LOGGER.info(e)
         return False
