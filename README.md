@@ -9,7 +9,7 @@ You want to get a notifiaction to your smartphone when the programm is finished 
 Then we have a solution!  
 
 ## How does it work ? 
-By setting up a small script which is reading the current power from a compatible wall plug, observe the power level and sends a notifcation via your own telegramBot to your device which is running a telegram application. 
+By setting up a small script which is reading the current power from a compatible wall plug, observe the power level and sends a notifcation via your own Telegram bot to your device which is running the Telegram messenger app. 
 
 ## What do I need ? 
 - Device which can run a python 3.8 Script with internet connection (Raspberry Pi recommended) 
