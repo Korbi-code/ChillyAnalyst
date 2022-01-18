@@ -3,29 +3,21 @@
 
 
 from tinydb import TinyDB, Query
-from pathlib import Path
 from src.chillyLogger import *
 import os
-
-from cfgReader import *
+from cfgReader import get_configuration
 
 _LOGGER = get_logger(__file__)
 
 
-def get_is_user_registered(id) -> bool:
+def get_is_user_registered(user_id) -> bool:
     read_successful, cfg_path = get_configuration("telegram")
     path = REPO_PATH + os.path.join(cfg_path["subscribed_users_path"])
 
     try:
-        db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
+        db = TinyDB(os.sep.join([path, cfg_path["subscribed_users_filename"]]))
         db_field = Query()
-        db.search(db_field.type == id)
-
-        detected = False
-        for item in db:
-            if id == item['id']:
-                detected = True
-        return detected
+        return db.contains(db_field.userId == user_id)
 
     except Exception as e:
         _LOGGER.info(e)
@@ -37,7 +29,7 @@ def get_all_active_users():
     path = REPO_PATH + os.path.join(cfg_path["subscribed_users_path"])
 
     try:
-        db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
+        db = TinyDB(os.sep.join([path, cfg_path["subscribed_users_filename"]]))
         db_field = Query()
         db.search(db_field.type == 'id')
         return db
@@ -47,7 +39,7 @@ def get_all_active_users():
         return False
 
 
-def register_new_user(id, firstname, lastname):
+def register_new_user(user_id, firstname, lastname):
     read_successful, cfg_path = get_configuration("telegram")
     path = REPO_PATH + os.path.join(cfg_path["subscribed_users_path"])
 
@@ -55,9 +47,9 @@ def register_new_user(id, firstname, lastname):
         if not os.path.exists(path):
             os.makedirs(path)
 
-        db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
-
-        item = {'id': id, 'firstname': firstname, 'lastname': lastname, 'type': 'basic', 'notification': 'True'}
+        db = TinyDB(os.sep.join([path, cfg_path["subscribed_users_filename"]]))
+        item = {'userId': user_id, 'firstname': firstname, 'lastname': lastname, 'type': 'basic',
+                'notification': 'True'}
         _LOGGER.debug("register_new_user" + str(item))
         db.insert(item)
         return True
@@ -67,15 +59,14 @@ def register_new_user(id, firstname, lastname):
         return False
 
 
-def update_user_entry(id, field, value) -> bool:
+def update_user_entry(user_id, field, value) -> bool:
     read_successful, cfg_path = get_configuration("telegram")
     path = REPO_PATH + os.path.join(cfg_path["subscribed_users_path"])
 
     try:
-        db = TinyDB(path + '/' + cfg_path["subscribed_users_filename"])
+        db = TinyDB(os.sep.join([path, cfg_path["subscribed_users_filename"]]))
         db_field = Query()
-        db.search(db_field.id == id)
-        db.update({field: value})
+        db.update({field: value}, db_field.userId == user_id)
         return True
 
     except Exception as e:
